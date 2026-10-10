@@ -60,8 +60,8 @@ async function workspaceSuites() {
 export async function gate() {
   // Independent source inventories: Docs/plans/v3/current-test-inventory.md and registration-test-inventory.md.
   // Verified baseline 480 + 38 source-counted registration/transport/activity regressions.
-  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '518');
-  if (!Number.isSafeInteger(expected) || expected < 518) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 518');
+  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '519');
+  if (!Number.isSafeInteger(expected) || expected < 519) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 519');
   const started = Date.now();
   let runtime;
   let total = 0;

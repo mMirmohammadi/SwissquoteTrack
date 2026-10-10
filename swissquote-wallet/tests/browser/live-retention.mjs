@@ -9,7 +9,7 @@ const walletRoot = fileURLToPath(new URL('../../', import.meta.url));
 const safeId = /^[A-Za-z0-9][A-Za-z0-9_-]{0,79}$/;
 const fail = () => new Error('Secure local retention failed; further broadcasts are blocked.');
 const sameAddress = (a, b) => typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
-const deviceFields = new Set(['id', 'wallet', 'owner', 'envelope', 'createdAt', 'setupCode', 'cardGuardian', 'kitSavedAt', 'independentCheckedAt', 'passkeyRegisteredAt', 'pastRecipients']);
+const deviceFields = new Set(['id', 'wallet', 'owner', 'envelope', 'createdAt', 'setupCode', 'cardGuardian', 'kitSavedAt', 'independentCheckedAt', 'passkeyRegisteredAt', 'pastRecipients', 'deploymentBlock']);
 
 // Only the small JSON-compatible subset actually emitted by Playwright 1.64's
 // storageScript is accepted. Primitives are raw; {s,id} is a Set, not a string.
@@ -87,6 +87,10 @@ export function hasEncryptedDevice(state, { owner, wallet } = {}) {
   const values = records.map(deviceValue);
   for (const value of values) {
     if (!value || Object.keys(value).some(key => !deviceFields.has(key))) throw fail();
+    // Public deployment metadata is optional, but must match lifecycle's uint64 format.
+    // Require a full-string match: JavaScript's $ also matches before a final newline.
+    const block = value.deploymentBlock;
+    if (block !== undefined && (typeof block !== 'string' || /^(0|[1-9][0-9]{0,19})$/.exec(block)?.[0] !== block || BigInt(block) > 18446744073709551615n)) throw fail();
     const e = value.envelope;
     if (!e || Object.keys(e).sort().join(',') !== 'ciphertext,iv,kdf,salt,v' || e.v !== 1 || e.kdf?.name !== 'PBKDF2' || e.kdf.hash !== 'SHA-256' || e.kdf.iterations !== 600000 || Object.keys(e.kdf).length !== 3) throw fail();
     if (![e.salt, e.iv, e.ciphertext].every(text => typeof text === 'string' && /^[A-Za-z0-9_-]+$/.test(text)) || Buffer.from(e.salt, 'base64url').length !== 16 || Buffer.from(e.iv, 'base64url').length !== 12 || Buffer.from(e.ciphertext, 'base64url').length < 16 || e.ciphertext.length > 8192) throw fail();

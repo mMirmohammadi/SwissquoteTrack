@@ -166,6 +166,51 @@ test('exact Playwright encoded undefined wallet passes owner predeploy, not wall
   assert.equal(hasEncryptedDevice(encodedState(absent), { owner, wallet }), false);
 });
 
+test('optional deploymentBlock accepts only canonical uint64 metadata in plain and exact encoded devices; snapshots stay raw', async () => {
+  const cases = [
+    ['absent', {}, true],
+    ['undefined', { deploymentBlock: undefined }, true],
+    ['zero', { deploymentBlock: '0' }, true],
+    ['ordinary block', { deploymentBlock: '12345678' }, true],
+    ['uint64 maximum', { deploymentBlock: '18446744073709551615' }, true],
+    ['leading zero', { deploymentBlock: '01' }, false],
+    ['double zero', { deploymentBlock: '00' }, false],
+    ['negative', { deploymentBlock: '-1' }, false],
+    ['number', { deploymentBlock: 1 }, false],
+    ['oversize', { deploymentBlock: '1'.repeat(21) }, false],
+    ['uint64 overflow', { deploymentBlock: '18446744073709551616' }, false],
+    ['empty', { deploymentBlock: '' }, false],
+    ['null', { deploymentBlock: null }, false],
+    ['boolean', { deploymentBlock: true }, false],
+    ['decimal', { deploymentBlock: '1.0' }, false],
+    ['whitespace', { deploymentBlock: ' 1' }, false],
+    ['trailing newline', { deploymentBlock: '1\n' }, false],
+    ['unknown field', { deploymentBlock: '1', unexpected: undefined }, false],
+    ['owner key', { deploymentBlock: '1', ownerSeed: 'synthetic-not-a-seed' }, false],
+    ['bad envelope', { deploymentBlock: '1', envelope: { ...device().envelope, seed: 'synthetic-not-a-seed' } }, false],
+  ];
+  for (const [representation, exportState] of [['plain', state], ['encoded', encodedState]]) {
+    for (const [name, fields, accepted] of cases) {
+      const exported = exportState({ ...device(), ...fields });
+      if (accepted) assert.equal(hasEncryptedDevice(exported, { owner, wallet }), true, `${representation}: ${name}`);
+      else rejectsValue(exported);
+    }
+  }
+  const undefinedEntry = encodedState({ ...device(), deploymentBlock: undefined }).origins[0].indexedDB[0].stores[0].records[0].valueEncoded.o.find(entry => entry.k === 'deploymentBlock');
+  assert.deepEqual(undefinedEntry, { k: 'deploymentBlock', v: { v: 'undefined' } });
+  const f = await fixture(), retention = await createLiveRetention(f.opts);
+  try {
+    await retention.retainCredentials(credentials);
+    for (const [slot, exported] of [state({ ...device(), deploymentBlock: '12345678' }), encodedState({ ...device(), deploymentBlock: '18446744073709551615' })].entries()) {
+      const original = JSON.stringify(exported);
+      await retention.guardWrite(context(exported), { owner, wallet });
+      const saved = await readFile(join(f.cwd, '.sepolia-runs', f.opts.runId, `browser-state-${slot}.json`), 'utf8');
+      assert.equal(saved, original);
+      assert.equal(JSON.stringify(exported), original);
+    }
+  } finally { await retention.close(); }
+});
+
 test('encoded unknown plaintext, ambiguous both representations and missing representations fail closed', () => {
   rejectsValue(encodedState({ ...device(), mnemonic: 'synthetic-not-a-seed' }));
   rejectsValue(encodedState({ ...device(), envelope: { ...device().envelope, seed: 'synthetic-not-a-seed' } }));

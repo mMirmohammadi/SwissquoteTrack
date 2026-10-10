@@ -114,13 +114,18 @@ async function run() {
     assert.equal(health.ok, true); assert.equal(health.chainId, CHAIN); assert.equal(health.mock, true);
     assert.equal(health.strictSponsorship, true); assert.ok(health.features.includes('strictSponsorship'));
     assert.equal(partner.service, 'partner'); assert.equal(partner.status, 'ok'); assert.equal(partner.mock, true);
+    stage = 'read-only sender readiness';
     const sender = await (await get(`${SQ}/relay/status`)).json();
     assert.equal(sender.chainId, CHAIN); assert.equal(sender.blocked, false); assert.equal(sender.status, 'idle');
+    stage = 'read-only application readiness';
     await Promise.all([get(WALLET), get(TOOL)]);
+    stage = 'read-only two-node chain identity';
     assert.deepEqual(await Promise.all(clients.map(client => client.getChainId())), [CHAIN, CHAIN]);
+    stage = 'read-only registry code and upgrade pins';
     await verifyDappCode(rpc, await rpc.getBlockNumber({ cacheTime: 0 }));
     evidence.checks.push('strict service, idle sender, two explicit Sepolia nodes and registry code/upgrade pins checked before any browser write');
     // Fixed public build path only; never read a key/env/service storage file.
+    stage = 'read-only portable-tool artifact';
     const portable = await readFile(new URL('../../apps/recovery-tool/dist/index.html', import.meta.url), 'utf8');
     assert.ok(portable.includes('data-tab="verify"') && portable.includes('check-current-owner'));
     evidence.toolBuildSha256 = createHash('sha256').update(portable).digest('hex');
@@ -386,15 +391,19 @@ async function run() {
     evidence.before = before;
     await verifyDappCode(rpc, beforeBlock); // Same exported fail-closed pins as service; includes proxy/admin and unrelated registry pins.
     evidence.checks.push('actual fresh-wallet state on two agreeing public nodes: 1 USDC, zero position, borrow, allowance, nonce and owner/wallet ETH; all registry code/upgrade pins match');
-    stage = 'existing DeFi UI exact supply preview';
+    stage = 'DeFi navigation';
     await page.getByRole('navigation', { name: 'Wallet navigation', exact: true }).getByRole('button', { name: /DeFi$/ }).click({ timeout: remaining() });
     const panel = page.getByTestId('dapps-panel');
+    stage = 'DeFi panel visibility';
     await panel.waitFor({ timeout: remaining() });
-    await panel.getByLabel('Action', { exact: true }).selectOption('supply');
+    stage = 'DeFi supply action selector';
+    await panel.getByRole('combobox', { name: 'Action', exact: true }).selectOption('supply');
+    stage = 'DeFi exact amount selector';
     await panel.getByLabel('Amount (USDC, at most 5)', { exact: true }).fill('1');
     assert.ok((await panel.innerText()).includes('not an official Compound Sepolia deployment'));
     assert.ok((await panel.innerText()).includes('Test tokens have no cash value'));
     assert.ok((await panel.innerText()).includes('Not covered by depositor protection'));
+    stage = 'DeFi exact supply preview submission';
     const preview = await actionResponse('/dapps/preview', () => panel.getByTestId('dapp-preview').click({ timeout: remaining() }));
     assert.equal(preview.dappId, 'compound'); assert.match(preview.effectsHash, /^0x[0-9a-f]{64}$/i);
     assert.match(preview.blockNumber, /^(0|[1-9]\d*)$/); assert.ok(Array.isArray(preview.summary) && preview.summary.length > 0);
