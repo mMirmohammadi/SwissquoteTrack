@@ -248,6 +248,10 @@ async function run() {
       await action(); const response = await pending; const result = await response.json();
       const kind = { '/relay/deploy': 'deploy', '/account/withdraw': 'mock-account-funding', '/relay/safe-tx': 'compound-supply-1-usdc' }[path];
       if (kind && /^0x[0-9a-f]{64}$/i.test(result.transactionHash || '')) evidence.submitted.push({ kind, hash: result.transactionHash });
+      if (!response.ok()) {
+        const codes = new Set(['NOT_SPONSORED', 'SANCTIONS_BLOCK', 'SCREENING_UNAVAILABLE', 'EFFECTS_MISMATCH', 'SIMULATION_UNAVAILABLE']);
+        evidence.serviceRefusal = { path, status: response.status(), code: codes.has(result?.code) ? result.code : 'unclassified' };
+      }
       assert.equal(response.ok(), true); return result;
     };
     stage = 'offline independent card and public-tool default';
@@ -341,15 +345,29 @@ async function run() {
     await toolContext.setOffline(false); await tool.goto(TOOL, { timeout: remaining() });
     assert.equal(await tool.locator('#network').innerText(), 'SEPOLIA · two pinned public nodes');
     await tool.locator('[data-tab="verify"]').click();
+    stage = 'independent tool invalid setup rejection';
     await tool.locator('#setup').fill('https://invalid.example/setup'); await tool.locator('#check-button').click();
     await tool.locator('#status[data-state="error"]').waitFor({ timeout: remaining() });
     assert.match(await tool.locator('#status').innerText(), /copy-paste code, not a link or JSON/);
+    stage = 'independent tool owner-phrase length rejection';
     await tool.locator('#setup').fill(setupCode); await tool.locator('#check-words').fill(Array(24).fill('abandon').join(' '));
     await tool.locator('#check-button').click(); await tool.locator('#status[data-state="error"]').waitFor({ timeout: remaining() });
     assert.match(await tool.locator('#status').innerText(), /12 recovery-card words/);
     evidence.checks.push('served tool rejects setup links and synthetic 24-word input; never supplied an owner seed');
+    stage = 'independent tool card and current-owner input';
     await tool.locator('#check-words').fill(words); await tool.locator('#check-current-owner').fill(evidence.owner);
-    await tool.locator('#check-button').click(); await tool.locator('#status[data-state="success"]').waitFor({ timeout: remaining(65000) });
+    stage = 'independent tool actual two-node verification';
+    await tool.locator('#check-button').click();
+    await tool.locator('#status[data-state="success"], #status[data-state="error"]').waitFor({ timeout: remaining(65000) });
+    if (await tool.locator('#status').getAttribute('data-state') !== 'success') {
+      const message = await tool.locator('#status').innerText();
+      const category = /429|rate.limit|too many requests/i.test(message) ? 'public_rpc_rate_limit'
+        : /timeout|timed out/i.test(message) ? 'public_rpc_timeout'
+        : /fetch|HTTP|RPC|network/i.test(message) ? 'public_rpc_unavailable'
+        : 'independent_verification_refused';
+      evidence.toolRefusal = { category }; // Fixed labels only, never raw provider bodies or card input.
+      throw new Error('Independent tool refused; no funding or supply permitted.');
+    }
     assert.match(await tool.locator('#status').innerText(), /Both RPC checks passed/);
     assert.equal(await tool.locator('#check-words').inputValue(), '');
     await page.getByRole('checkbox', { name: 'I personally saw a green result in the independent tool.', exact: true }).check();
