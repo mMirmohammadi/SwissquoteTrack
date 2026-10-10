@@ -1,0 +1,5 @@
+# Parent correction for issuer screening owner a04d354e
+
+Create NEW services/swissquote/test/screening.test.ts (not walletroot/test). Simple filter selftoken at adapter cannot distinguish transfer recipient == token; do NOT accept blanket filter. Required context: transfer/approve call target token is not itself freeze subject, but wallet, transfer recipient, approval spender, nonERC20 action target ARE. All addresses still sanctions/mockchecked. Direct screen withouttx mustdefaultall. Extend scope minimal services/swissquote/src/app.ts/policy.ts+screening.ts/tests to derivecallfreezeaccounts and passoptional subjects only tofreeze sources. Recipient==token/approvespender==token positives MUSTblock. Compound/router target positives MUSTblock. Adapter filtering alone insufficient; parentwillreviewbeforelive. No privatefiles/network/live.
+
+Sourcepublic read-only evidence atcurrentblock: RedStone/Chainalysisnoflags forwallet+USDC+TREASURY; USDCfreeze flagsUSDCitself, EURCfreezenone. SameflatcallAddresssetcurrentlyusedforfreezeandsanctions. Signed transferrecipientTREASURY notUSDC. No bypassarbitrarypositive.

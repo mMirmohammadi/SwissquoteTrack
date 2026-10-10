@@ -2,7 +2,12 @@
 // Approved run: ALLOW_SEPOLIA_BROWSER=yes SEPOLIA_BROWSER_CHAIN_ID=11155111
 // SEPOLIA_RECIPIENT=0x... ALLOW_SEPOLIA_BROWSER_FUND=yes node --import tsx tests/browser/sepolia-service.mjs
 // Fresh wallets normally need the optional third broadcast: 1 USDC from MOCK SQ_ACCOUNT.
+// Required: ALLOW_SEPOLIA_LOCAL_RETENTION=yes. Optional SEPOLIA_RUN_ID=[A-Za-z0-9][A-Za-z0-9_-]{0,79};
+// omitted id generates a UUID. Run from swissquote-wallet; .sepolia-runs/<id> is ignored,
+// exclusive 0700; generated passphrase/card and encrypted IndexedDB/auth snapshots are secret 0600.
+// No owner seed export. 300s write deadline + at most 8s retention/close grace. Never reuse a run id.
 import assert from 'node:assert/strict';
+import { createHarnessRetention } from './live-retention.mjs';
 import { readFile } from 'node:fs/promises';
 import { createHash, randomUUID } from 'node:crypto';
 import { performance } from 'node:perf_hooks';
@@ -22,7 +27,18 @@ const SERVICE_POSTS = new Set([...WRITE_PATHS, '/auth/password/register', '/auth
 const transferAbi = parseAbi(['event Transfer(address indexed from,address indexed to,uint256 value)']);
 const same = (a, b) => typeof a === 'string' && typeof b === 'string' && a.toLowerCase() === b.toLowerCase();
 const evidence = { schema: 'sepolia-service-p0-v1', outcome: 'not_run', chainId: CHAIN, claims: { identity: 'MOCK KYC and MOCK bank account', passkey: 'Chromium virtual authenticator; service verifies real WebAuthn, not hardware proof', recovery: 'Not tested', kit: 'Not tested', defi: 'Not tested' }, submitted: [], receipts: [], checks: [] };
-let stage = 'authorization', browser, words = '', leak = false, networkViolation = false;
+let stage = 'authorization', browser, walletContext, retention, devicePassphrase = '', words = '', leak = false, networkViolation = false;
+let cleanupPromise;
+const cleanup = () => cleanupPromise ??= (async () => {
+  try {
+    // Always attempt a fresh secret IndexedDB/auth snapshot BEFORE destroying context.
+    if (retention && walletContext) await retention.snapshot(walletContext, { owner: evidence.owner, requireDevice: Boolean(evidence.owner) });
+  } catch { evidence.retention = { status: 'failed_stop_future_writes_inspect_private_run_locally' }; evidence.outcome = 'incomplete_retention_failed_inspect_private_run_locally'; process.exitCode = 1; }
+  finally {
+    if (retention) await retention.close().catch(() => { process.exitCode = 1; });
+    if (browser) await browser.close().catch(() => {});
+  }
+})();
 let deployment, proof, ownerPayment;
 const attempts = new Map();
 let deadline = 0;
@@ -32,17 +48,21 @@ const publicJson = () => JSON.stringify(evidence, null, 2); // Only explicit pub
 async function run() {
   assert.equal(process.env.ALLOW_SEPOLIA_BROWSER, 'yes');
   assert.equal(process.env.SEPOLIA_BROWSER_CHAIN_ID, String(CHAIN));
+  assert.equal(process.env.ALLOW_SEPOLIA_LOCAL_RETENTION, 'yes');
   const recipient = process.env.SEPOLIA_RECIPIENT;
   assert.ok(recipient && isAddress(recipient, { strict: false }) && !/^0x0{40}$/i.test(recipient));
   assert.ok(!same(recipient, '0x7f367cc41522ce07553e823bf3be79a889debe1b'));
   deadline = performance.now() + 300000;
   const abort = new AbortController();
-  const timer = setTimeout(() => {
-    abort.abort(); void browser?.close().catch(() => {});
+  const timer = setTimeout(async () => {
+    abort.abort();
     evidence.outcome = 'deadline_reached_inspect_public_hashes_before_any_retry';
     evidence.blocker = { stage, category: 'hard_300_second_deadline' };
     evidence.broadcastRequests = Object.fromEntries(attempts);
-    console.log(publicJson()); process.exit(1); // Hard cap includes RPCs and browser cleanup.
+    // Deadline stops future writes; allow bounded fresh-retention cleanup before close.
+    const exitTimer = setTimeout(() => { console.log(publicJson()); process.exit(1); }, 8000);
+    await cleanup(); clearTimeout(exitTimer);
+    console.log(publicJson()); process.exit(1);
   }, 300000);
   timer.unref();
   const get = async url => {
@@ -70,6 +90,8 @@ async function run() {
     return { receipt, tx };
   };
   try {
+    // Before network, browser, keys or broadcasts: consent and private ignored run.
+    retention = await createHarnessRetention();
     stage = 'read-only attach preflight';
     const [health, partner] = await Promise.all([(await get(`${SQ}/health`)).json(), (await get(`${PARTNER}/health`)).json()]);
     assert.equal(health.ok, true); assert.equal(health.chainId, CHAIN); assert.equal(health.mock, true);
@@ -85,13 +107,14 @@ async function run() {
     const playwright = await import('playwright');
     const browserEnv = Object.fromEntries(['PATH', 'HOME', 'LANG', 'LD_LIBRARY_PATH', 'XDG_CACHE_HOME', 'XDG_CONFIG_HOME', 'XDG_DATA_HOME'].filter(key => process.env[key]).map(key => [key, process.env[key]]));
     browser = await playwright.chromium.launch({ headless: true, executablePath: process.env.BROWSER_EXECUTABLE || playwright.chromium.executablePath(), env: browserEnv, timeout: remaining() });
-    const walletContext = await browser.newContext({ serviceWorkers: 'block' });
+    walletContext = await browser.newContext({ serviceWorkers: 'block' });
     const toolContext = await browser.newContext({ serviceWorkers: 'block' });
     const walletOrigins = new Set([WALLET, TOOL, SQ, PARTNER]);
     const inspect = async route => {
       const request = route.request(); const url = new URL(request.url()); const body = request.postData() || '';
       if (url.href === new URL('../../apps/recovery-tool/dist/index.html', import.meta.url).href && request.method() === 'GET') return route.continue();
       if (words && `${request.url()} ${body}`.includes(words)) { leak = true; return route.abort(); }
+      if (devicePassphrase && `${request.url()} ${body}`.includes(devicePassphrase)) { leak = true; return route.abort(); }
       if (RPCS.includes(url.origin) && url.href === `${url.origin}/`) {
         let calls; try { const data = JSON.parse(body); calls = Array.isArray(data) ? data : [data]; } catch { networkViolation = true; return route.abort(); }
         if (request.method() !== 'POST' || !calls.every(call => READS.has(call.method))) { networkViolation = true; return route.abort(); }
@@ -104,6 +127,8 @@ async function run() {
           const count = (attempts.get(url.pathname) || 0) + 1; attempts.set(url.pathname, count);
           if (count !== 1 || (url.pathname === '/account/withdraw' && process.env.ALLOW_SEPOLIA_BROWSER_FUND !== 'yes')) { networkViolation = true; return route.abort(); }
           const data = JSON.parse(body);
+          assert.ok(performance.now() < deadline);
+          await retention.guardWrite(walletContext, { owner: url.pathname === '/relay/deploy' ? data.owner : evidence.owner, wallet: evidence.wallet, deploy: url.pathname === '/relay/deploy' });
           if (url.pathname === '/relay/deploy') {
             // UI generates the owner, guardian addresses and salt. Deploy must be unsigned.
             assert.equal(data.chainId, CHAIN); assert.equal(data.signature, undefined); assert.equal(data.ownershipProof, undefined);
@@ -131,6 +156,11 @@ async function run() {
         } else if (url.pathname === '/wallets') proof = JSON.parse(body).ownershipProof;
       }
       if (url.origin === PARTNER && request.method() === 'POST' && url.pathname !== '/enroll') { networkViolation = true; return route.abort(); }
+      // A timeout/cleanup during validation must never release a paused write.
+      if (url.origin === SQ && WRITE_PATHS.has(url.pathname) && request.method() === 'POST') {
+        assert.equal(abort.signal.aborted, false); assert.equal(Boolean(cleanupPromise), false);
+        assert.ok(performance.now() < deadline);
+      }
       return route.continue();
     };
     // Reject unexpected methods/duplicates before service broadcast; never fulfill mocked responses.
@@ -162,10 +192,13 @@ async function run() {
     await tool.locator('#generate').click(); words = (await tool.locator('#words li').allTextContents()).join(' ');
     assert.equal(words.split(/\s+/).length, 12);
     const guardian = await tool.locator('#guardian').innerText(); assert.ok(isAddress(guardian));
+    devicePassphrase = `Device-${randomUUID()}`;
+    await retention.retainCredentials({ devicePassphrase, cardWords: words });
+    evidence.retention = { status: 'private_credentials_saved_before_deploy', runId: retention.runId };
     evidence.checks.push('separate context generated 12-word card offline; portable build defaults to Sepolia');
     stage = 'fresh registration and actual WebAuthn verification';
     await page.goto(WALLET, { timeout: remaining() });
-    await page.getByText('Sepolia test network', { exact: true }).waitFor({ timeout: remaining() });
+    await page.locator('.sidebar-bottom').filter({ hasText: 'Sepolia test network' }).waitFor({ timeout: remaining() });
     await click('New here? Create a login');
     await page.getByLabel('Email address').fill(`sepolia-browser-${randomUUID()}@example.test`);
     await page.getByLabel('Login password').fill(`Login-${randomUUID()}`);
@@ -177,16 +210,23 @@ async function run() {
     const kyc = await actionResponse('/kyc/mock-verify', () => page.getByRole('button', { name: 'MOCK KYC: mark identity verified' }).click());
     assert.equal(kyc.mock, true); assert.equal(kyc.kycVerified, true); await idle();
     stage = 'unsigned UI deployment via service RELAYER';
-    await page.getByLabel('Create a device passphrase').fill(`Device-${randomUUID()}`);
+    await page.getByLabel('Create a device passphrase').fill(devicePassphrase);
+    // Pre-click export may contain auth only; interception exports and verifies the
+    // newly encrypted owner before /relay/deploy is permitted to reach the service.
+    await retention.snapshot(walletContext);
     await page.getByLabel('Recovery card public address').fill(guardian);
     const deployed = await actionResponse('/relay/deploy', () => page.getByRole('button', { name: /Create my wallet/ }).click());
     assert.ok(same(deployed.wallet, evidence.wallet));
+    await retention.snapshot(walletContext, { owner: evidence.owner, requireDevice: true });
     const deployChain = await mined('deploy', deployed, ADDRESSES.factory);
     const creation = events(deployChain.receipt, ADDRESSES.factory, factoryAbi).find(event => event.eventName === 'ProxyCreation');
     assert.ok(creation && same(creation.args.proxy, evidence.wallet) && same(creation.args.singleton, ADDRESSES.safeL2));
     assert.ok(!same(deployChain.tx.from, evidence.owner) && !same(deployChain.tx.from, evidence.wallet));
     evidence.relayer = deployChain.tx.from;
     await idle(); await page.getByText('Verified as yours', { exact: true }).waitFor({ timeout: remaining() });
+    // Wallet/setup binding occurs after mined deploy. Retain it before any funding.
+    await retention.snapshot(walletContext, { owner: evidence.owner, wallet: evidence.wallet, requireDevice: true });
+    evidence.retention = { status: 'encrypted_device_passphrase_and_card_saved_before_funding', runId: retention.runId };
     stage = 'fresh EIP-1271 ownership and deterministic creation checks';
     assert.ok(proof && same(proof.hash, hashMessage(proof.message)));
     assert.equal(await read(rpc, evidence.wallet, fallbackHandlerAbi, 'isValidSignature', [proof.hash, proof.signature]), '0x1626ba7e');
@@ -242,12 +282,12 @@ async function run() {
     const beforeRecipient = await read(rpc, ADDRESSES.usdc, erc20Abi, 'balanceOf', [recipient], beforeBlock);
     const beforeNonce = await read(rpc, evidence.wallet, safeAbi, 'nonce', undefined, beforeBlock);
     assert.equal(beforeNonce, 0n); assert.ok(beforeWallet >= 1000000n);
-    await page.getByRole('navigation', { name: 'Wallet navigation', exact: true }).getByRole('button', { name: /Send money/ }).click();
+    await page.getByRole('navigation', { name: 'Wallet navigation', exact: true }).getByRole('button', { name: '↗ Pay', exact: true }).click();
     await page.getByLabel('Recipient wallet address').fill(recipient); await page.getByLabel('Amount in USDC', { exact: true }).fill('1');
     await click(/Review payment/);
     const suffix = page.getByLabel('Recipient last four characters');
     if (await suffix.count()) await suffix.fill(recipient.slice(-4)); // Actual payPreview first-recipient guard.
-    const payment = await actionResponse('/relay/safe-tx', () => page.getByRole('button', { name: /Sign & send payment/ }).click());
+    const payment = await actionResponse('/relay/safe-tx', () => page.getByRole('button', { name: 'Sign & send', exact: true }).click());
     assert.equal(payment.classification, 'Small'); assert.ok(payment.screening?.ok); assert.deepEqual(payment.screening.hits, []);
     const sources = payment.screening.sources;
     assert.ok(sources.some(source => source.startsWith('RedStone OFAC/EU/UN-derived sanctions oracle: clear (updated ')));
@@ -276,7 +316,14 @@ async function run() {
     evidence.payment = { recipient, amountBaseUnits: '1000000', safeTxHash: payment.hash, nonceBefore: beforeNonce.toString(), nonceAfter: (beforeNonce + 1n).toString(), ownerEthAfterWei: '0', walletEthAfterWei: '0' };
     evidence.checks.push('one owner-signed Small payment; required live screening clear; same service relayer paid gas; Safe success event, exact Transfer and two-node USDC/nonce effects; owner and Safe ETH remain zero; card words never sent');
     evidence.outcome = 'passed';
-  } finally { abort.abort(); if (browser) await browser.close().catch(() => {}); clearTimeout(timer); }
+  } finally {
+    abort.abort(); clearTimeout(timer);
+    const cleanupTimer = setTimeout(() => {
+      evidence.outcome = 'incomplete_cleanup_deadline_inspect_private_run_locally';
+      console.log(publicJson()); process.exit(1);
+    }, 8000);
+    await cleanup(); clearTimeout(cleanupTimer);
+  }
 }
 
 try { await run(); }

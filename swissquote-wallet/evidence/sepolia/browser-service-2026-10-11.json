@@ -1,0 +1,111 @@
+{
+  "schema": "sepolia-service-p0-v1",
+  "outcome": "passed",
+  "chainId": 11155111,
+  "claims": {
+    "identity": "MOCK KYC and MOCK bank account",
+    "passkey": "Chromium virtual authenticator; service verifies real WebAuthn, not hardware proof",
+    "recovery": "Not tested",
+    "kit": "Not tested",
+    "defi": "Not tested"
+  },
+  "submitted": [
+    {
+      "kind": "deploy",
+      "hash": "0x1f7c41a0f6a9a801fc8e2aaff887056259ed6e877ec2140a5b571ac89982eace"
+    },
+    {
+      "kind": "mock-account-funding",
+      "hash": "0x89244735216f3e2d363f511e85836804830c91e7f83b2edebfb096f66944f493"
+    },
+    {
+      "kind": "owner-payment-1-usdc",
+      "hash": "0xe3188195628404c7da0883744aa6562c45e6597fe32c636e72fb3890801dc77e"
+    }
+  ],
+  "receipts": [
+    {
+      "kind": "deploy",
+      "hash": "0x1f7c41a0f6a9a801fc8e2aaff887056259ed6e877ec2140a5b571ac89982eace",
+      "wallet": "0x4386810dc7185d4cE2a313645f9D9504d386C219",
+      "chainId": 11155111,
+      "blockNumber": "11887224",
+      "blockHash": "0x645615abb58e5b559e2659ddd47dcbcf7e48acd191e3910a1e1b886c75cca8bb",
+      "gasUsed": "2650279",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "26502829754185",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "to": "0x4e1dcf7ad4e460cfd30791ccc4f9c8a4f820ec67"
+    },
+    {
+      "kind": "mock-account-funding",
+      "hash": "0x89244735216f3e2d363f511e85836804830c91e7f83b2edebfb096f66944f493",
+      "wallet": "0x4386810dc7185d4cE2a313645f9D9504d386C219",
+      "chainId": 11155111,
+      "blockNumber": "11887225",
+      "blockHash": "0xed2f8dacb9b80fd4b4810e3902ef9c02f253801b43f43fabf07c487be978de3c",
+      "gasUsed": "151779",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "1517792276685",
+      "sponsor": "0xe3c71e2a0ba81377a5e2a3c1d67279e36f75090e",
+      "to": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
+    },
+    {
+      "kind": "owner-payment-1-usdc",
+      "hash": "0xe3188195628404c7da0883744aa6562c45e6597fe32c636e72fb3890801dc77e",
+      "wallet": "0x4386810dc7185d4cE2a313645f9D9504d386C219",
+      "chainId": 11155111,
+      "blockNumber": "11887226",
+      "blockHash": "0x2d59a98045fab074287488aaf17022edda533c185c0fa1223bca801d25a107a0",
+      "gasUsed": "187685",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "1876852815275",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "to": "0x4386810dc7185d4ce2a313645f9d9504d386c219"
+    }
+  ],
+  "checks": [
+    "separate context generated 12-word card offline; portable build defaults to Sepolia",
+    "fresh password registration and service-verified WebAuthn enrollment; virtual authenticator only",
+    "factory ProxyCreation matches fresh deterministic wallet; two public receipts agree; real Safe code, sole owner, threshold one, nonce zero and EIP-1271 verified",
+    "served tool rejects setup links and synthetic 24-word input; never supplied an owner seed",
+    "actual independent tool verified original initializer, expected current owner and card on both recovery paths using pinned public history nodes",
+    "one owner-signed Small payment; required live screening clear; same service relayer paid gas; Safe success event, exact Transfer and two-node USDC/nonce effects; owner and Safe ETH remain zero; card words never sent"
+  ],
+  "toolBuildSha256": "1937a2f5b1532838e34ccd15149cb1f1175bc038dde7a51b1fde859036287b8a",
+  "health": {
+    "chainId": 11155111,
+    "strictSponsorship": true,
+    "mock": true
+  },
+  "retention": {
+    "status": "encrypted_device_and_auth_saved_before_funding",
+    "runId": "4f5be117-5364-406b-bd84-9c52a3acca16"
+  },
+  "wallet": "0x4386810dc7185d4cE2a313645f9D9504d386C219",
+  "owner": "0x529Cfe31F83fe0d490a088A0e8f2F6ec20886e48",
+  "relayer": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+  "ownershipProofHash": "0xb6a24a9abb4897304e53bbd82d53df61c3c28b25a85b831083e6ed48f1e10673",
+  "mockAccountSender": "0xe3c71e2a0ba81377a5e2a3c1d67279e36f75090e",
+  "beforePaymentBlock": {
+    "number": "11887225",
+    "hash": "0xed2f8dacb9b80fd4b4810e3902ef9c02f253801b43f43fabf07c487be978de3c"
+  },
+  "screening": {
+    "checkedAt": "2026-10-10T21:28:27.652Z",
+    "requiredLiveSanctionsClear": true,
+    "requiredIssuerFreezeListsClear": true,
+    "secondaryChainalysisLimited": true,
+    "warningCount": 1,
+    "identityStillMock": true
+  },
+  "payment": {
+    "recipient": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71",
+    "amountBaseUnits": "1000000",
+    "safeTxHash": "0xf28b8bd766bff854dfc027d7819f95f2d2901c2894d4cbfe6cc6c48f56916862",
+    "nonceBefore": "0",
+    "nonceAfter": "1",
+    "ownerEthAfterWei": "0",
+    "walletEthAfterWei": "0"
+  }
+}

@@ -1,4 +1,5 @@
 import type { Address, AppOptions, SafeTx } from './types.ts';
+import { DAPP_ADDRESSES } from '@sq/protocol';
 export const ZERO = '0x0000000000000000000000000000000000000000' as Address;
 export const MODULES: readonly Address[] = ['0x949d01d424bE050D09C16025dd007CB59b3A8c66','0x38275826E1933303E508433dD5f289315Da2541c'];
 export const USDC:Address='0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
@@ -59,6 +60,26 @@ export function callAddresses(wallet:Address,tx:SafeTx,options:AppOptions={}) {
     if(['0xa9059cbb','0x095ea7b3'].includes(call.data.slice(0,10))&&call.data.length===138) addresses.push(address('0x'+call.data.slice(34,74)));
   }
   return [...new Set(addresses)];
+}
+/** Derive issuer freeze subjects from call roles; never subtract a token's account role. */
+export function derivefreezeSubjects(wallet: Address, tx: SafeTx, options: AppOptions = {}): Address[] {
+  const subjects = new Set<Address>([address(wallet)]);
+  const tokens = new Set([options.usdc ?? USDC, DAPP_ADDRESSES.usdc, DAPP_ADDRESSES.eurc].map(address));
+  // Validating first ensures only the authorized CALL-only wrapper can enter this set.
+  const calls = transactionCalls(tx, options);
+  if (tx.operation === 1) subjects.add(address(tx.to));
+  for (const call of calls) {
+    const target = address(call.to);
+    const data = call.data.toLowerCase();
+    const canonicalAccountCall = call.operation === 0 && call.value === 0n &&
+      (data.slice(0, 10) === '0xa9059cbb' || data.slice(0, 10) === '0x095ea7b3') &&
+      data.length === 138 && /^0x[0-9a-f]+$/.test(data) && /^0{24}$/.test(data.slice(10, 34));
+    if (canonicalAccountCall) subjects.add(address('0x' + data.slice(34, 74)));
+    // Only a known token's canonical target role is omitted. Its recipient/spender
+    // role (including revoke0), native value and unsupported methods stay covered.
+    if (!tokens.has(target) || !canonicalAccountCall) subjects.add(target);
+  }
+  return [...subjects];
 }
 export async function strictClassification(wallet:Address,tx:SafeTx,options:AppOptions):Promise<Classification> {
   const {checkDappBatch}=await import('@sq/protocol');

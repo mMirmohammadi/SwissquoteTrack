@@ -58,9 +58,10 @@ async function workspaceSuites() {
   return suites;
 }
 export async function gate() {
-  // Source inventory: AgentsLocal/4dd376f2/gate-test-count.md, 383 Node + 42 contracts, plus 8 scoped partner privacy regressions.
-  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '433');
-  if (!Number.isSafeInteger(expected) || expected < 433) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 433');
+  // Independent source inventory: Docs/plans/v3/current-test-inventory.md.
+  // Historical 433 + 8 tool pacing + 14 retention + 16 screening + 9 call-role tests.
+  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '480');
+  if (!Number.isSafeInteger(expected) || expected < 480) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 480');
   const started = Date.now();
   let runtime;
   let total = 0;
@@ -79,7 +80,11 @@ export async function gate() {
       console.log(`Gate verified ${suite.label}: passed=${summary.pass}, skipped=${summary.skipped}`);
     }
     // Contract tests use Hardhat's separate in-process local chain (no public networks configured).
-    const contracts = await runtime.run('Contract tests', 'npm', ['--prefix', 'contracts', 'test'], { stdio: ['ignore', 'pipe', 'pipe'] });
+    // Natural interval mining belongs only to the owned browser RPC node.
+    // Mocha creates a separate in-process chain and tests exact timestamp boundaries.
+    const contractEnv = { ...runtime.env };
+    delete contractEnv.V3_LOCAL_OWNED_RUN;
+    const contracts = await runtime.run('Contract tests', 'npm', ['--prefix', 'contracts', 'test'], { stdio: ['ignore', 'pipe', 'pipe'], env: contractEnv });
     const summary = contractSummary(contracts.output);
     total += summary.pass;
     console.log(`Gate verified contracts: passed=${summary.pass}, skipped=${summary.skipped}`);

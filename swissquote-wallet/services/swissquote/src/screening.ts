@@ -3,16 +3,21 @@ import type { ScreenResult } from '@sq/protocol';
 import type { Address, ScreeningSource } from './types.ts';
 
 export const MOCK_LISTED: Address = '0x7f367cc41522ce07553e823bf3be79a889debe1b';
-export async function screenAddresses(addresses: readonly Address[], sources: readonly ScreeningSource[], mockHits: readonly Address[], now: number): Promise<ScreenResult> {
+export async function screenAddresses(addresses: readonly Address[], sources: readonly ScreeningSource[], mockHits: readonly Address[], now: number, freezeSubjects?: readonly Address[]): Promise<ScreenResult> {
   const unique = [...new Set(addresses.map(a => a.toLowerCase() as Address))];
+  // Only trusted server-derived signed-call roles may narrow issuer account checks.
+  // Direct screens default to every address; sanctions and MOCK positives never narrow.
+  const freezeAccounts = freezeSubjects === undefined ? unique : [...new Set(freezeSubjects.map(a => a.toLowerCase() as Address))];
+  if (freezeAccounts.some(account => !unique.includes(account))) throw new Error('Freeze subjects must belong to screened addresses');
   const hits = new Set<Address>(unique.filter(a => [MOCK_LISTED, ...mockHits.map(a => a.toLowerCase())].includes(a)));
   const labels = ['MOCK sanctions list: ' + (hits.size ? 'listed' : 'clear')];
   const warnings: string[] = []; let available = true;
   if (!sources.length) { available = false; warnings.push('Required live screening sources are not configured.'); }
   await Promise.all(sources.map(async source => {
     try {
-      const result = await source.check(unique);
-      if (!Array.isArray(result.hits) || result.hits.some(a => !unique.includes(a.toLowerCase() as Address))) throw new Error('Invalid screening result');
+      const subjects = source.kind === 'freeze' ? freezeAccounts : unique;
+      const result = await source.check(subjects);
+      if (!Array.isArray(result.hits) || result.hits.some(a => !subjects.includes(a.toLowerCase() as Address))) throw new Error('Invalid screening result');
       const stale = result.updatedAt !== undefined && (!Number.isFinite(result.updatedAt) || result.updatedAt > now || now - result.updatedAt > 30 * 86400_000);
       for (const a of result.hits) hits.add(a.toLowerCase() as Address);
       labels.push(`${source.mock ? 'MOCK ' : ''}${source.label}: ${result.hits.length ? 'listed' : stale ? 'unavailable (stale)' : 'clear'}${result.updatedAt !== undefined ? ` (updated ${new Date(result.updatedAt).toISOString()})` : ''}`);
@@ -47,6 +52,8 @@ export function liveScreeningSources(mainnetUrls: readonly string[], tokenUrls: 
       return {hits: addresses.filter((_, i) => flags[i]), warning: 'Chainalysis is a secondary, known-old list; a clear result does not establish current coverage.'};
     })},
     ...tokens.map(token => ({label: `Circle issuer freeze list ${token}`, required: true, mock: false, kind: 'freeze' as const, check: (addresses: readonly Address[]) => failover(tokenUrls, async client => {
+      // Never subtract the issuer address here: it may be an explicit recipient
+      // or spender. Account roles are derived from signed calls by the server.
       const flags = await Promise.all(addresses.map(address => client.readContract({address: token, abi: freezeAbi, functionName: 'isBlacklisted', args: [address]})));
       return {hits: addresses.filter((_, i) => flags[i])};
     })})),

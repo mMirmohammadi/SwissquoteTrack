@@ -1,0 +1,3 @@
+# Scope amendment for a04d354e (parent unable to send_message)
+
+You may finishreportWITHOUTclaimacceptance. Parenthasalreadydecided contextcorrectionrequired andwillownApp/policyintegration afteryourcompletion. Youradapterblanketfilter willbereverted. Keepallwritesinoriginalscope; newtestsdocumentunsafeversionhistory. Parenthasindependentreviewchildb01022d0 derivingroles. No liveattemptwithadapteronlyversion. Rootservicejob1243mustnotrestartuntilcorrectcontexttests.

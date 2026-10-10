@@ -1,0 +1,3 @@
+# Review verdict: current adapter-only fix NOT accepted
+
+Parent independentlyconfirmedblockcauseSANCTIONS_BLOCK viaREADONLYserviceaudit; live adapterreadshowedselfUSDCflag. However currentchildadaptertokenfilter remainsunsafe: explicittransferrecipient==USDC orapprovedspender==USDC wouldneverget USDCissuerpositive. Passing14tests coverswallet/recipientOTHERaddressesbutnotcriticalsame-tokenrecipient. No live restart/broadcast permittedwiththisversion. Parentwillrevertfilter andimplement contextsubject routingafterchildcompletion; use issuer-freeze-owner-routing.md. fullpnpmtest383pass7skipNOTaggregateacceptance. Output observedsource only notcomplianceclaim.

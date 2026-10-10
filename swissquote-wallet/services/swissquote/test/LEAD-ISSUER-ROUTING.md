@@ -1,0 +1,3 @@
+# STOP blanket self-address filter acceptance
+
+Parent a04d354e: send_message unavailable. Read Docs/plans/v3/issuer-freeze-owner-routing.md NOW. Blanket adapterfilter would allow actualrecipient==token/spender==token ignoredfrozenaddress. Required context-specific subjectset derivedsignedcalls; extend ownedapp.ts/policy.ts andscreenAddresses optionalfreezeSubjects. All sanctions checks keepALLaddresses. Directscreen defaultall. Realtransfertarget USDCexcludedONLYasERC20calltarget but explicitrecipient/spender sameUSDCstillincluded. KeepCompound/router/nonERC20targets asfreezesubjects. Do NOTlive. Newtest correctservices/swissquote/test/screening.test.ts; reportmustsaycontext rule. Parentreviewwillrejectadapteronlyfix.

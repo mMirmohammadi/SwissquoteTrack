@@ -1,6 +1,6 @@
 # V3 local acceptance
 
-Lead managed job bash-1236 completed with exit 0.
+Historical checkpoint below: managed job bash-1236 completed with exit 0. The later live payment is separately [verified](<../../research/v3-live-payment-evidence.md>); Compound remains incomplete. **Post-live-fix aggregate acceptance passed: managed job bash-1358 exited 0, 480 passed, zero skipped, typecheck/build passed, duration 432.1 seconds before cleanup.** The independent [source inventory](<current-test-inventory.md>) matches 438 Node tests plus 42 contracts. Node suites: scripts 12, recovery tool 26, wallet 27, partner 14, Swissquote 64, protocol package 29, browser 33, protocol acceptance 100, security 72, integration 61. This current full gate includes real local waiting-period recovery and encrypted-kit/browser acceptance; it is not mined Compound or hardware/compliance evidence. Earlier post-fix gate bash-1346 passed 438 Node tests but failed one contract timestamp boundary because browser interval-mining configuration leaked into Mocha. The [clock-isolation correction](<gate-interval-mining-finding.md>) separately passed 42 contract tests (bash-1357); those separate results are not a complete aggregate pass.
 
 - Typecheck and build passed.
 - Aggregate: 433 passed, zero skipped; elapsed 426.9 seconds before owned-process cleanup.

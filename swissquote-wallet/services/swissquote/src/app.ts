@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { Store, opaque, digest, hashPassword, checkPassword, type User, type Session, type Challenge } from './store.ts';
 import { address, hex, integer, normalizeTx, classifyTransaction, requireThat, ApiError, MODULES, ZERO, USDC } from './policy.ts';
 import { hashMessage } from 'viem';
-import { strictSponsorship, strictClassification, transactionCalls, callAddresses, refuse } from './policy.ts';
+import { strictSponsorship, strictClassification, transactionCalls, callAddresses, derivefreezeSubjects, refuse } from './policy.ts';
 import { screenAddresses } from './screening.ts';
 import { DAPP_REGISTRY, DAPP_ADDRESSES, checkDappBatch, describeEffects, simulateCalls, revalidateSimulation, DappSimulationError } from '@sq/protocol';
 import { verifyWebAuthn } from './webauthn.ts';
@@ -31,8 +31,8 @@ export function createApp(options:AppOptions={}) {
   const kyc=(user:User)=>requireThat(user.kyc,'MOCK KYC verification required',403);
   const challenge=(id:unknown,purpose:string,userId?:string)=> {requireThat(typeof id==='string','Missing challengeId'); const item=store.get<Challenge>('challenge',id); requireThat(item&&item.expires>now()&&item.purpose===purpose&&(!userId||item.userId===userId),'Challenge expired or invalid',401); store.delete('challenge',id); return item;};
   const flags=(options.features??(process.env.SQ_FEATURES??'').split(',')).map(v=>v.trim()).filter(Boolean);const strict=strictSponsorship({...options,features:flags});
-  const screen=(addresses:readonly Address[],cancel=false)=>screenAddresses(addresses,cancel?(options.screeningSources??[]).filter(s=>s.kind!=='freeze'):options.screeningSources??[],options.sanctions??[],now());
-  const enforceScreen=async(addresses:readonly Address[],cancel=false)=> {const result=await screen(addresses,cancel);if(result.hits.length) refuse('SANCTIONS_BLOCK','Screening positive hit: sponsorship blocked');if(!cancel&&!result.ok) refuse('SCREENING_UNAVAILABLE','Required screening unavailable or stale');return result;};
+  const screen=(addresses:readonly Address[],cancel=false,freezeSubjects?:readonly Address[])=>screenAddresses(addresses,cancel?(options.screeningSources??[]).filter(s=>s.kind!=='freeze'):options.screeningSources??[],options.sanctions??[],now(),freezeSubjects);
+  const enforceScreen=async(addresses:readonly Address[],cancel=false,freezeSubjects?:readonly Address[])=> {const result=await screen(addresses,cancel,freezeSubjects);if(result.hits.length) refuse('SANCTIONS_BLOCK','Screening positive hit: sponsorship blocked');if(!cancel&&!result.ok) refuse('SCREENING_UNAVAILABLE','Required screening unavailable or stale');return result;};
   const dappCalls=(wallet:Address,tx:import('./types.ts').SafeTx,dappId:unknown)=> {const calls=transactionCalls(tx,options);const check=checkDappBatch(wallet,calls);if(!check.ok||typeof dappId!=='string'||check.dappId!==dappId) refuse('NOT_SPONSORED',check.reasons.join('; ')||'dApp registry mismatch');return calls;};
   const publicSepolia=options.chain?.chainId===11155111;
   interface SenderIntent {id:string;operation:ChainOperation;state:'uncertain'|'pending';txHash?:`0x${string}`;gas:string;createdAt:number}
@@ -119,7 +119,7 @@ export function createApp(options:AppOptions={}) {
     if(post&&path==='/dapps/preview') {
       const user=session(req).user;kyc(user);const wallet=address(body.wallet);owned(user,wallet);requireThat(body.tx&&typeof body.tx==='object','Missing transaction');const tx=normalizeTx(body.tx as Record<string,unknown>);
       requireThat(tx.safeTxGas==='0'&&tx.baseGas==='0'&&tx.gasPrice==='0'&&tx.gasToken===ZERO&&tx.refundReceiver===ZERO,'Safe gas/refund fields must be zero');
-      const calls=dappCalls(wallet,tx,body.dappId);const screening=await enforceScreen([...callAddresses(wallet,tx,options),...Object.values(DAPP_ADDRESSES)]);
+      const calls=dappCalls(wallet,tx,body.dappId);const screening=await enforceScreen([...callAddresses(wallet,tx,options),...Object.values(DAPP_ADDRESSES)],false,derivefreezeSubjects(wallet,tx,options));
       const fresh=await simulateCalls(options.simulationClients??[],wallet,calls);
       store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path,decision:'preview',flags,wallet,safeTxHash:await chain().safeTxHash(wallet,tx),effectsHash:fresh.effectsHash,sources:screening.sources});
       return {summary:describeEffects(fresh.effects),effectsHash:fresh.effectsHash,blockNumber:fresh.blockNumber,dappId:body.dappId,warnings:DAPP_REGISTRY.filter(d=>d.id===body.dappId).map(d=>d.warning)};
@@ -184,7 +184,7 @@ export function createApp(options:AppOptions={}) {
       const calls=isDapp?dappCalls(wallet,tx,body.dappId):undefined;
       if(strict&&classification!=='Protective'&&classification!=='Admin'&&transactionCalls(tx,options).some(c=>!c.data.startsWith('0xa9059cbb'))&&!calls) refuse('NOT_SPONSORED','Listed dApp calls require reviewed effectsHash');
       if(calls) {requireThat(body.source==='dapp','dApp source required',403);requireThat(typeof body.effectsHash==='string'&&/^0x[0-9a-fA-F]{64}$/.test(body.effectsHash),'Reviewed effectsHash required',403);}
-      const screening=(strict||classification==='Protective')?await enforceScreen(classification==='Protective'?[wallet]:[...callAddresses(wallet,tx,options),...(calls?Object.values(DAPP_ADDRESSES):[])],classification==='Protective'):undefined;
+      const screening=(strict||classification==='Protective')?await enforceScreen(classification==='Protective'?[wallet]:[...callAddresses(wallet,tx,options),...(calls?Object.values(DAPP_ADDRESSES):[])],classification==='Protective',classification==='Protective'?undefined:derivefreezeSubjects(wallet,tx,options)):undefined;
       // Reserve this nonce before any asynchronous broadcast. Never retry an uncertain send automatically.
       // Recheck after asynchronous authorization: another request may have reserved this nonce.
       const raced=store.get<{hash:string;result?:unknown}>('safe-submission',key);

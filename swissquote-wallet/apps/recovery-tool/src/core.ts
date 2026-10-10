@@ -9,13 +9,42 @@ import {
 import { normalizeWords, validateCodeInput, pinnedRpcUrls, parseJson, sameAddress } from './validation.js';
 
 export type ToolConfig = { chainId: number; rpcUrls?: string };
+/** One queue per endpoint/client; pace actual HTTP attempts, including viem retries. */
+export function pacedFetch(fetchFn: typeof fetch, clock = {
+  now: () => performance.now(),
+  sleep: (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms)),
+}): typeof fetch {
+  let tail: Promise<void> = Promise.resolve();
+  let lastStart = -Infinity;
+  return (input, init) => {
+    const signal = init?.signal ?? (input instanceof Request ? input.signal : undefined);
+    const request = tail.then(async () => {
+      // viem's finite HTTP timeout includes queue time. Never send an expired attempt.
+      signal?.throwIfAborted();
+      let remaining = 150 - (clock.now() - lastStart);
+      while (remaining > 0) {
+        await clock.sleep(remaining);
+        signal?.throwIfAborted();
+        remaining = 150 - (clock.now() - lastStart);
+      }
+      lastStart = clock.now();
+      return fetchFn(input, init);
+    });
+    // A rejected/aborted fetch must not poison the endpoint queue.
+    tail = request.then(() => undefined, () => undefined);
+    return request;
+  };
+}
 /** On Sepolia, publicUrls supplies the pinned pair (current reads: PUBLIC_RPC_URLS; wallet history: HISTORY_RPC_URLS). The local chain ignores it. */
 export function makeClients(config: ToolConfig, publicUrls: readonly string[] = PUBLIC_RPC_URLS): PublicClient[] {
   const chain = config.chainId === CHAIN_ID ? sepolia : config.chainId === LOCAL_CHAIN_ID ? hardhat : undefined;
   if (!chain) throw new Error('Unsupported chain.');
   const urls = pinnedRpcUrls(config.chainId, config.rpcUrls, publicUrls);
   if (urls.length !== 2 || new Set(urls).size !== 2) throw new Error('Two independent public RPCs are required.');
-  return urls.map(url => createPublicClient({ chain, transport: http(url, { timeout: 12_000, retryCount: 1 }) }) as PublicClient);
+  return urls.map(url => createPublicClient({ chain, transport: http(url, {
+    timeout: 12_000, retryCount: 1, batch: false,
+    ...(config.chainId === CHAIN_ID ? { fetchFn: pacedFetch(fetch) } : {}),
+  }) }) as PublicClient);
 }
 export function createCard(): { words: string; guardian: string } {
   const words = generateCardSeed();
