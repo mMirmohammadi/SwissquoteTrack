@@ -9,6 +9,7 @@
     "test": "tsx --test test/*.test.ts",
     "devnet": "tsx devnet.ts",
     "story": "tsx story.ts",
+    "story:sepolia": "tsx story-sepolia.ts",
     "kit-sweep": "tsx kit-sweep.ts"
   },
   "dependencies": {"@sq/protocol": "workspace:*", "viem": "^2.38.0"},

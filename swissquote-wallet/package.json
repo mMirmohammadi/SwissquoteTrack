@@ -12,6 +12,7 @@
     "devnet": "pnpm --filter @sq/scripts devnet",
     "dev": "node dev.mjs",
     "demo:local": "node local-demo.mjs",
+    "demo:sepolia": "node sepolia-demo.mjs",
     "dev:all": "node dev.mjs --chain",
     "dev:wallet": "pnpm --filter @sq/wallet dev",
     "dev:tool": "pnpm --filter @sq/recovery-tool dev",

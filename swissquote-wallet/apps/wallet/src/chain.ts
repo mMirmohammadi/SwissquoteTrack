@@ -2,7 +2,9 @@ import { createPublicClient, fallback, http, encodeFunctionData, decodeEventLog,
 import { hardhat, sepolia } from 'viem/chains';
 import { ADDRESSES, safeAbi, moduleAbi, erc20Abi, makeSafeTx, type SafeTx } from '@sq/protocol';
 export const chainId = import.meta.env?.VITE_CHAIN === 'sepolia' ? 11155111 : 31337;
-const urls: string[] = (import.meta.env?.VITE_RPC_URLS || (chainId === 31337 ? 'http://127.0.0.1:8545,http://localhost:8545' : 'https://ethereum-sepolia-rpc.publicnode.com,https://rpc.sepolia.org')).split(',').map((url: string) => url.trim()).filter(Boolean);
+// Two independent public Sepolia nodes (both allow browser CORS); rpc.sepolia.org is dead.
+export const DEFAULT_SEPOLIA_RPC_URLS = 'https://ethereum-sepolia-rpc.publicnode.com,https://rpc.sepolia.ethpandaops.io';
+const urls: string[] = (import.meta.env?.VITE_RPC_URLS || (chainId === 31337 ? 'http://127.0.0.1:8545,http://localhost:8545' : DEFAULT_SEPOLIA_RPC_URLS)).split(',').map((url: string) => url.trim()).filter(Boolean);
 export const client = createPublicClient({ chain: chainId === 31337 ? hardhat : sepolia, transport: fallback(urls.map((url: string) => http(url, { timeout: 12000, retryCount: 1 }))) });
 const recoveryClients = [...new Set(urls)].map(url => createPublicClient({ chain: chainId === 31337 ? hardhat : sepolia, transport: http(url, { timeout: 12000, retryCount: 1 }) }));
 export interface PendingRecovery { module: Address; label: string; newOwners: readonly Address[]; executeAfter: bigint }
@@ -22,9 +24,24 @@ export async function owners(wallet: Address): Promise<readonly Address[]> { ret
 export async function paymentTx(wallet: Address, recipient: string, amount: string): Promise<SafeTx> {
   return makeSafeTx({ to: ADDRESSES.usdc, nonce: await nonce(wallet), data: encodeFunctionData({ abi: erc20Abi, functionName: 'transfer', args: [validatedAddress(recipient), usdcAmount(amount)] }) });
 }
-export async function confirmed(hash: Hex, safeWallet?: Address): Promise<void> {
+export const SEPOLIA_RECEIPT_TIMEOUT_MS = 180000;
+export function etherscanTxUrl(hash: Hex): string { return `https://sepolia.etherscan.io/tx/${hash}`; }
+/** Sepolia only: no receipt was seen in time. The transaction may still confirm, so this is neither success nor failure. */
+export class PendingTransactionError extends Error {
+  readonly hash: Hex; readonly explorerUrl: string;
+  constructor(hash: Hex) { const explorerUrl = etherscanTxUrl(hash); super(`Transaction pending — check Etherscan: ${explorerUrl}`); this.name = 'PendingTransactionError'; this.hash = hash; this.explorerUrl = explorerUrl; }
+}
+export async function confirmed(hash: Hex, safeWallet?: Address): Promise<void> { return confirmedOn(client, chainId, hash, safeWallet); }
+export async function confirmedOn(rpc: Pick<typeof client, 'waitForTransactionReceipt'>, network: number, hash: Hex, safeWallet?: Address): Promise<void> {
   if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error('The service did not return a valid transaction hash.');
-  const receipt = await client.waitForTransactionReceipt({ hash, timeout: 90000 });
+  let receipt: Awaited<ReturnType<typeof client.waitForTransactionReceipt>>;
+  try { receipt = await rpc.waitForTransactionReceipt({ hash, timeout: network === 11155111 ? SEPOLIA_RECEIPT_TIMEOUT_MS : 90000 }); }
+  catch (error) {
+    // Sepolia: a missing receipt (timeout or public-node error) is reported as pending, never as failure or success.
+    if (network === 11155111) throw new PendingTransactionError(hash);
+    throw error;
+  }
+  // A receipt exists: keep the strict checks.
   if (receipt.status !== 'success') throw new Error('The chain transaction reverted. Wallet state was not changed.');
   if (safeWallet) {
     const events = receipt.logs.filter(log => log.address.toLowerCase() === safeWallet.toLowerCase()).flatMap(log => {

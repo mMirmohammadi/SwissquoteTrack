@@ -1,9 +1,10 @@
 import { decodeAbiParameters, isAddress, keccak256, parseAbiItem, type Address, type PublicClient } from 'viem';
-import { ADDRESSES, CHAIN_ID, CONTRACT_CODE_HASHES, FALLBACK_STORAGE_SLOT, GUARD_STORAGE_SLOT, MODULES, PROXY_CREATION_CODE_HASH, PROXY_RUNTIME_CODE_HASH, SENTINEL_ADDRESS, ZERO_ADDRESS } from './constants.js';
+import { ADDRESSES, CHAIN_ID, CONTRACT_CODE_HASHES, FALLBACK_STORAGE_SLOT, GUARD_STORAGE_SLOT, LOG_CHUNK_BLOCKS, MODULES, PROXY_CREATION_CODE_HASH, PROXY_RUNTIME_CODE_HASH, SENTINEL_ADDRESS, SEPOLIA_HISTORY_START, ZERO_ADDRESS } from './constants.js';
 import { factoryAbi, moduleAbi, safeAbi } from './abis.js';
 import { computeWalletAddress, decodeMultiSendCall } from './wallet.js';
 import type { WalletSetup, WalletVerification } from './types.js';
 export interface VerificationOptions {
+  /** First block of the history scan; must cover wallet creation. Default: historyStartBlock(chainId, head). */
   fromBlock?: bigint;
   expectedWallet?: Address;
   /** Authenticated current owner; never infer from the RPC's getOwners response. Setup owner remains the CREATE2 creation owner. */
@@ -13,6 +14,22 @@ const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
 const sameSet = (a: readonly Address[], b: readonly Address[]) => a.length === b.length && new Set(a.map(x => x.toLowerCase())).size === a.length && a.every(x => b.some(y => same(x, y)));
 const multiSigEvent = parseAbiItem('event SafeMultiSigTransaction(address to,uint256 value,bytes data,uint8 operation,uint256 safeTxGas,uint256 baseGas,uint256 gasPrice,address gasToken,address refundReceiver,bytes signatures,bytes additionalInfo)');
 const moduleEvent = parseAbiItem('event SafeModuleTransaction(address module,address to,uint256 value,bytes data,uint8 operation)');
+/**
+ * Default first block of the wallet-history scan. On Sepolia no wallet of ours predates SEPOLIA_HISTORY_START.
+ * Other chains, and a chain with Sepolia's id whose head is still below that block (a fresh test chain), are read from genesis.
+ */
+export function historyStartBlock(chainId: number, head: bigint): bigint {
+  return chainId === CHAIN_ID && head >= SEPOLIA_HISTORY_START ? SEPOLIA_HISTORY_START : 0n;
+}
+/** Reads [fromBlock, toBlock] in consecutive ranges of at most LOG_CHUNK_BLOCKS blocks; any failed range rejects. */
+async function readLogsInChunks<T>(fromBlock: bigint, toBlock: bigint, read: (fromBlock: bigint, toBlock: bigint) => Promise<readonly T[]>): Promise<T[]> {
+  const logs: T[] = [];
+  for (let start = fromBlock; start <= toBlock; start += LOG_CHUNK_BLOCKS) {
+    const end = start + LOG_CHUNK_BLOCKS - 1n < toBlock ? start + LOG_CHUNK_BLOCKS - 1n : toBlock;
+    for (const log of await read(start, end)) logs.push(log);
+  }
+  return logs;
+}
 export async function verifyWallet(client: PublicClient, setup: WalletSetup, options: VerificationOptions = {}): Promise<WalletVerification> {
   let wallet = options.expectedWallet ?? ADDRESSES.factory;
   const reasons: string[] = [];
@@ -55,11 +72,12 @@ export async function verifyWallet(client: PublicClient, setup: WalletSetup, opt
       if (pending.executeAfter !== 0n) reasons.push(`Recovery pending: ${module}`);
     }
     // Module executions do not increment the Safe owner nonce, including recovery at nonce zero.
-    const fromBlock = options.fromBlock ?? 0n;
+    // Pin the head once; every history range below ends at this block.
     const toBlock = await client.getBlockNumber();
+    const fromBlock = options.fromBlock ?? historyStartBlock(chainId, toBlock);
     if (fromBlock > toBlock) throw new Error('Invalid history start block');
     if (nonce > 0n) {
-      const transactions = await client.getLogs({ address: wallet, event: multiSigEvent, fromBlock, toBlock, strict: true });
+      const transactions = await readLogsInChunks(fromBlock, toBlock, (from, to) => client.getLogs({ address: wallet, event: multiSigEvent, fromBlock: from, toBlock: to, strict: true }));
       const seen = new Set<string>();
       for (const log of transactions) {
         const [eventNonce] = decodeAbiParameters([{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }], log.args.additionalInfo);
@@ -75,7 +93,7 @@ export async function verifyWallet(client: PublicClient, setup: WalletSetup, opt
       // One emitted SafeL2 transaction for each increment; incomplete providers must never turn verification green.
       if (BigInt(seen.size) !== nonce || [...seen].some(n => BigInt(n) >= nonce!)) reasons.push('Incomplete Safe transaction history');
     }
-    const moduleTransactions = await client.getLogs({ address: wallet, event: moduleEvent, fromBlock, toBlock, strict: true });
+    const moduleTransactions = await readLogsInChunks(fromBlock, toBlock, (from, to) => client.getLogs({ address: wallet, event: moduleEvent, fromBlock: from, toBlock: to, strict: true }));
     if (moduleTransactions.some(log => log.args.operation !== 0 || !MODULES.some(m => same(m, log.args.module)))) reasons.push('Forbidden module transaction in wallet history');
   } catch (error) { reasons.push(error instanceof Error ? error.message : 'Wallet verification RPC failure'); }
   return { ok: reasons.length === 0, wallet, reasons, ...(nonce === undefined ? {} : { nonce }) };

@@ -17,7 +17,7 @@ export const safeAbi = parseAbi([
 export const factoryAbi = parseAbi([
   'function proxyCreationCode() pure returns (bytes)',
   'function createProxyWithNonce(address singleton,bytes initializer,uint256 saltNonce) returns (address proxy)',
-  'event ProxyCreation(address proxy,address singleton)',
+  'event ProxyCreation(address indexed proxy,address singleton)',
 ]);
 export const moduleAbi = parseAbi([
   'function addGuardianWithThreshold(address guardian,uint256 threshold)',

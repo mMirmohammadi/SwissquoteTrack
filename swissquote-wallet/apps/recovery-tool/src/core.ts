@@ -1,7 +1,7 @@
 import { createPublicClient, http, isAddress, keccak256, type Address, type PublicClient } from 'viem';
 import { sepolia, hardhat } from 'viem/chains';
 import {
-  CHAIN_ID, LOCAL_CHAIN_ID, PUBLIC_RPC_URLS, MODULES, MODULE_CODE_HASHES, generateCardSeed,
+  CHAIN_ID, LOCAL_CHAIN_ID, PUBLIC_RPC_URLS, HISTORY_RPC_URLS, MODULES, MODULE_CODE_HASHES, generateCardSeed,
   mnemonicToAddress, mnemonicToPrivateKey, ownerFingerprint, decodeSetupCode,
   decodeRequestCode, encodeCode, verifyWalletIndependent, assertRecoveryHash,
   signRecovery, moduleAbi, openKit, type EmergencyKit, type RecoveryRequest,
@@ -9,10 +9,11 @@ import {
 import { normalizeWords, validateCodeInput, pinnedRpcUrls, parseJson, sameAddress } from './validation.js';
 
 export type ToolConfig = { chainId: number; rpcUrls?: string };
-export function makeClients(config: ToolConfig): PublicClient[] {
+/** On Sepolia, publicUrls supplies the pinned pair (current reads: PUBLIC_RPC_URLS; wallet history: HISTORY_RPC_URLS). The local chain ignores it. */
+export function makeClients(config: ToolConfig, publicUrls: readonly string[] = PUBLIC_RPC_URLS): PublicClient[] {
   const chain = config.chainId === CHAIN_ID ? sepolia : config.chainId === LOCAL_CHAIN_ID ? hardhat : undefined;
   if (!chain) throw new Error('Unsupported chain.');
-  const urls = pinnedRpcUrls(config.chainId, config.rpcUrls, PUBLIC_RPC_URLS);
+  const urls = pinnedRpcUrls(config.chainId, config.rpcUrls, publicUrls);
   if (urls.length !== 2 || new Set(urls).size !== 2) throw new Error('Two independent public RPCs are required.');
   return urls.map(url => createPublicClient({ chain, transport: http(url, { timeout: 12_000, retryCount: 1 }) }) as PublicClient);
 }
@@ -20,8 +21,12 @@ export function createCard(): { words: string; guardian: string } {
   const words = generateCardSeed();
   return { words, guardian: mnemonicToAddress(words) };
 }
-/** expectedCurrentOwner must be supplied independently by the user, never filled from RPC getOwners. */
-export async function checkWallet(code: string, words: string, config: ToolConfig, clients = makeClients(config), expectedCurrentOwner?: string) {
+/**
+ * expectedCurrentOwner must be supplied independently by the user, never filled from RPC getOwners.
+ * Wallet history is read from the protocol default start block (Sepolia: SEPOLIA_HISTORY_START; local: genesis)
+ * through two history-capable RPCs; publicnode keeps only recent logs.
+ */
+export async function checkWallet(code: string, words: string, config: ToolConfig, clients = makeClients(config, HISTORY_RPC_URLS), expectedCurrentOwner?: string) {
   const setup = decodeSetupCode(validateCodeInput(code));
   if (setup.chainId !== config.chainId) throw new Error('Code chain does not match this tool.');
   const currentOwner = expectedCurrentOwner?.trim() || undefined;
@@ -29,7 +34,7 @@ export async function checkWallet(code: string, words: string, config: ToolConfi
   const cardGuardian = mnemonicToAddress(normalizeWords(words));
   return verifyWalletIndependent(clients, { owner: setup.owner, cardGuardian,
     partnerGuardian: setup.partnerGuardian, sqGuardian: setup.sqGuardian,
-    saltNonce: BigInt(setup.saltNonce), chainId: setup.chainId }, { expectedWallet: setup.wallet, fromBlock: 0n, expectedCurrentOwner: currentOwner as Address | undefined });
+    saltNonce: BigInt(setup.saltNonce), chainId: setup.chainId }, { expectedWallet: setup.wallet, expectedCurrentOwner: currentOwner as Address | undefined });
 }
 export type RecoveryReview = { request: RecoveryRequest; signer: string; fingerprint: string };
 export async function reviewRecovery(code: string, words: string, config: ToolConfig, clients = makeClients(config)): Promise<RecoveryReview> {

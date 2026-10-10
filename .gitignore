@@ -20,3 +20,6 @@ swissquote-wallet/contracts/artifacts/
 swissquote-wallet/contracts/cache/
 swissquote-wallet/**/test-results/
 swissquote-wallet/**/playwright-report/
+
+# Sepolia story run state: throwaway test keys for recovering test funds (secret)
+swissquote-wallet/.sepolia-runs/

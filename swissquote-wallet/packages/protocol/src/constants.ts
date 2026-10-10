@@ -36,4 +36,20 @@ export const GUARD_STORAGE_SLOT = '0x4a204f620c8c5ccdca3fd54d003badd85ba500436a4
 export const FALLBACK_STORAGE_SLOT = '0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5' as const;
 export const USDC_LIMIT = 5_000_000n;
 export const ETH_LIMIT = 10_000_000_000_000_000n;
-export const PUBLIC_RPC_URLS = ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'] as const;
+/**
+ * First Sepolia block the wallet-history check reads: shortly before our first Sepolia deployment.
+ * At head 11,886,175 (10 Oct 2026, 17:58 UTC) RELAYER and TREASURY had sent no transaction, so no wallet of ours is older.
+ */
+export const SEPOLIA_HISTORY_START = 11_886_000n;
+/** Largest block range per eth_getLogs request (publicnode allows 50,000 blocks, ethpandaops 30,000). */
+export const LOG_CHUNK_BLOCKS = 10_000n;
+/**
+ * Sepolia RPCs that keep full eth_getLogs history: two independent operators for wallet verification.
+ * publicnode drops logs older than about 10,000 blocks (~33 h), so it cannot verify older wallets.
+ */
+export const HISTORY_RPC_URLS = ['https://sepolia.gateway.tenderly.co', 'https://rpc.sepolia.ethpandaops.io'] as const;
+/**
+ * General Sepolia RPCs: publicnode first for sends, receipts and current reads; the history RPCs follow as fallbacks.
+ * drpc was removed: its free tier refuses eth_getLogs ranges of more than about 100 blocks.
+ */
+export const PUBLIC_RPC_URLS = ['https://ethereum-sepolia-rpc.publicnode.com', ...HISTORY_RPC_URLS] as const;
