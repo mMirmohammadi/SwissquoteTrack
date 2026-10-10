@@ -57,7 +57,7 @@ test('Sepolia keeps live sanctions/freeze sources and simulation endpoints even 
 async function fixture(options: AppOptions = {}, linkedWallet = wallet) {
   const events: string[] = [];
   const chain: ChainAdapter = {
-    chainId: 31337, computeWallet: async () => linkedWallet, verifyWallet: async () => true,
+    chainId: 31337, registrationBlock: async () => 1n, computeWallet: async () => linkedWallet, verifyWallet: async () => true,
     verifyOwnership: async () => true, safeTxHash: async () => hashMessage('tx'),
     verifyOwnerSignature: async () => true, safeNonce: async () => '0',
     recoveryHash: async () => hashMessage('recovery'), isGuardian: async () => true,

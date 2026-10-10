@@ -58,10 +58,10 @@ async function workspaceSuites() {
   return suites;
 }
 export async function gate() {
-  // Independent source inventory: Docs/plans/v3/current-test-inventory.md.
-  // Historical 433 + 8 tool pacing + 14 retention + 16 screening + 9 call-role tests.
-  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '480');
-  if (!Number.isSafeInteger(expected) || expected < 480) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 480');
+  // Independent source inventories: Docs/plans/v3/current-test-inventory.md and registration-test-inventory.md.
+  // Verified baseline 480 + 38 source-counted registration/transport/activity regressions.
+  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '518');
+  if (!Number.isSafeInteger(expected) || expected < 518) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 518');
   const started = Date.now();
   let runtime;
   let total = 0;
@@ -74,7 +74,7 @@ export async function gate() {
     await runtime.startApps();
     for (const suite of await workspaceSuites()) {
       console.log(`Gate suite: ${suite.label}`);
-      const result = await runtime.run(suite.label, process.execPath, ['--import', 'tsx', '--test', ...(suite.label === 'tests/browser' ? ['--test-concurrency=1'] : []), '--test-reporter=tap', ...suite.files], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...runtime.env, SQ_FEATURES: '' } });
+      const result = await runtime.run(suite.label, process.execPath, ['--import', 'tsx', '--test', ...(suite.label === 'apps/wallet' ? ['--experimental-test-module-mocks'] : []), ...(suite.label === 'tests/browser' ? ['--test-concurrency=1'] : []), '--test-reporter=tap', ...suite.files], { stdio: ['ignore', 'pipe', 'pipe'], env: { ...runtime.env, SQ_FEATURES: '' } });
       const summary = nodeSummary(result.output);
       total += summary.pass;
       console.log(`Gate verified ${suite.label}: passed=${summary.pass}, skipped=${summary.skipped}`);

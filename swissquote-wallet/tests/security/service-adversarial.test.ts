@@ -30,6 +30,8 @@ async function fixture(t: any, options: Record<string,unknown> = {}, linkWallet 
   const sent: ChainOperation[] = [];
   const chain: ChainAdapter = {
     chainId:31337, computeWallet:async()=>wallet, verifyWallet:async()=>true,
+    // Explicit in-memory local head; never claim a requested future block exists.
+    registrationBlock:async(minimumBlockNumber)=>{if((minimumBlockNumber??0n)>0n)throw Error('Fixture registration head 0 is below requested minimum');return 0n;},
     verifyOwnership:async(_w,_m,sig)=>sig==='0x1234',
     safeTxHash:async(w,transaction)=>hexHash([w.toLowerCase(),canonicalTx(transaction)]),
     verifyOwnerSignature:async(_w,_tx,sig)=>sig==='0x1234', safeNonce:async()=> '0',

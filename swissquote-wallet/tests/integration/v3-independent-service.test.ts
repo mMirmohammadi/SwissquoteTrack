@@ -24,6 +24,8 @@ const transfer=()=>safeTxToWire(makeSafeTx({to:ADDRESSES.usdc,data:`0xa9059cbb${
 function fixture(t:TestContext,options:AppOptions={},chainId=11155111) {
   const sent:ChainOperation[]=[];const verifications:{setup:Setup;expected?:string}[]=[];let signed=0;
   const chain:ChainAdapter={chainId,computeWallet:async()=>wallet,
+    // Labelled fixed head, independent of mocked transaction receipt block numbers.
+    registrationBlock:async(minimumBlockNumber)=>{const head=chainId===31337?0n:100n;if((minimumBlockNumber??0n)>head)throw Error(`Fixture registration head ${head} is below requested minimum`);return head;},
     verifyWallet:async(s,o)=>{verifications.push({setup:s,expected:o?.expectedCurrentOwner});return true;},
     verifyOwnership:async(_w,_m,s)=>s==='0x1234',
     safeTxHash:async(w,tx)=>hashSafeTx(w,safeTxFromWire({...tx,operation:tx.operation as 0|1}),11155111),

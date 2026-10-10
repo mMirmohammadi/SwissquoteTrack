@@ -8,7 +8,7 @@ import { errorMessage } from '../src/api';
 const wallet = '0x00000000000000000000000000000000000000aa' as Address;
 const hash = `0x${'ab'.repeat(32)}` as Hex;
 const link = `https://sepolia.etherscan.io/tx/${hash}`;
-const receipt = (status: string, event?: 'ExecutionSuccess'|'ExecutionFailure') => ({ status, logs: event ? [{ address: wallet, topics: encodeEventTopics({ abi: safeAbi, eventName: event, args: { txHash: hash } }), data: encodeAbiParameters([{ type: 'uint256' }], [0n]) }] : [] });
+const receipt = (status: string, event?: 'ExecutionSuccess'|'ExecutionFailure') => ({ status, blockNumber: 123n, logs: event ? [{ address: wallet, topics: encodeEventTopics({ abi: safeAbi, eventName: event, args: { txHash: hash } }), data: encodeAbiParameters([{ type: 'uint256' }], [0n]) }] : [] });
 // Fake receipt reader: records the timeout it was given, then returns or throws what the test asks for.
 function rpc(outcome: () => unknown) {
   const seen: { timeout?: number } = {};
@@ -32,7 +32,10 @@ test('Sepolia: when a receipt exists, the strict revert and ExecutionSuccess che
   await assert.rejects(confirmedOn(rpc(() => receipt('reverted')).client, 11155111, hash, wallet), notPending(/reverted/));
   await assert.rejects(confirmedOn(rpc(() => receipt('success', 'ExecutionFailure')).client, 11155111, hash, wallet), notPending(/Safe execution failed/));
   await assert.rejects(confirmedOn(rpc(() => receipt('success')).client, 11155111, hash, wallet), notPending(/does not prove/));
-  await confirmedOn(rpc(() => receipt('success', 'ExecutionSuccess')).client, 11155111, hash, wallet);
+  let seenBlock: bigint | undefined;
+  assert.equal(await confirmedOn(rpc(() => receipt('success', 'ExecutionSuccess')).client, 11155111, hash, wallet, block => { seenBlock = block; }), 123n);
+  assert.equal(seenBlock, 123n);
+  await assert.rejects(confirmedOn(rpc(() => ({ ...receipt('success'), blockNumber: undefined })).client, 11155111, hash), /valid confirmed block/);
   await assert.rejects(confirmedOn(rpc(() => receipt('success')).client, 11155111, '0x123' as Hex), /valid transaction hash/);
 });
 

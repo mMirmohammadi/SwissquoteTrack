@@ -77,6 +77,38 @@ export function App() {
     const [pendingTx, setPendingTx] = useState('');
     const busyRef = useRef(false);
     const signingGeneration = useRef(0);
+    const ownershipGeneration = useRef(0);
+    const currentIdentity = useRef({ token: session?.token, wallet, owner: device?.owner });
+    currentIdentity.current = { token: session?.token, wallet, owner: device?.owner };
+    const identityCommitWaiters = useRef<Array<() => void>>([]);
+    useEffect(() => { identityCommitWaiters.current.splice(0).forEach(resolve => resolve()); });
+    function assertRegistrationActivity(generation: number, activeSession: SessionResponse, identity?: { wallet?: Address; owner?: Address }) {
+        const current = currentIdentity.current;
+        if (generation !== signingGeneration.current || current.token !== activeSession.token || (identity && (current.wallet?.toLowerCase() !== identity.wallet?.toLowerCase() || current.owner?.toLowerCase() !== identity.owner?.toLowerCase()))) throw new Error('Device locked or session changed. Unlock and retry ownership registration.');
+    }
+    async function registerCurrent(record: DeviceRecord, seed: string, activeSession: SessionResponse, minimumBlockNumber?: bigint, generation = signingGeneration.current): Promise<boolean> {
+        // Fresh creation/promotion setters may not have committed yet. The token
+        // and lock generation are immediate; compare published identity after challenge.
+        let challengeStarted = false;
+        const needsCommit = currentIdentity.current.wallet?.toLowerCase() !== record.wallet?.toLowerCase() || currentIdentity.current.owner?.toLowerCase() !== record.owner.toLowerCase();
+        const published = needsCommit ? new Promise<void>(resolve => { identityCommitWaiters.current.push(resolve); }) : Promise.resolve();
+        const assertCurrent = async () => {
+            assertRegistrationActivity(generation, activeSession);
+            if (challengeStarted) {
+                // A mocked/local challenge can finish before React commits fresh
+                // creation/promotion. Wait for that publication, never skip identity.
+                await published;
+                assertRegistrationActivity(generation, activeSession, record);
+            }
+            challengeStarted = true;
+        };
+        await registerDeviceOwnership(record, seed, activeSession.clientId, activeSession.token, chainId, minimumBlockNumber, assertCurrent);
+        await assertCurrent();
+        // A lookup started before this proof must not undo its validated success.
+        ownershipGeneration.current++;
+        setVerified(true);
+        return true;
+    }
     async function run(label: string, action: () => Promise<void>) { if (busyRef.current)
         return; busyRef.current = true; setBusy(label); setError(''); setNotice(''); setPendingTx(''); try {
         await action();
@@ -148,9 +180,10 @@ export function App() {
             return;
         }
         let live = true;
+        const generation = ++ownershipGeneration.current;
         setVerified(false);
-        void call<WalletResponse>(`/wallets/${wallet}`, { token }).then(result => { if (live)
-            setVerified(!!device && result.verified && result.owner.toLowerCase() === device.owner.toLowerCase()); }).catch(() => { if (live)
+        void call<WalletResponse>(`/wallets/${wallet}`, { token }).then(result => { if (live && generation === ownershipGeneration.current)
+            setVerified(!!device && result.verified && result.wallet.toLowerCase() === wallet.toLowerCase() && result.owner.toLowerCase() === device.owner.toLowerCase()); }).catch(() => { if (live && generation === ownershipGeneration.current)
             setVerified(false); });
         return () => { live = false; };
     }, [wallet, token, device?.owner]);
@@ -189,20 +222,24 @@ export function App() {
         setPassword('');
         setNotice('Signed in. Your device key remains separately encrypted.');
     }
-    async function confirmedAction(label: string, result: TransactionResponse, safeWallet?: Address) {
+    async function confirmedAction(label: string, result: TransactionResponse, safeWallet?: Address): Promise<bigint> {
         setNotice('Submitted to the chain. Waiting for the receipt…');
-        await confirmed(result.transactionHash, safeWallet);
+        const block = await confirmed(result.transactionHash, safeWallet);
         setActivity(old => [{ label, hash: result.transactionHash, time: new Date().toLocaleTimeString() }, ...old]);
         setNotice(`${label} confirmed on chain.`);
         await refresh();
+        return block;
     }
-    async function exportKit(seed: string, target: Address, owner: Address) {
+    async function exportKit(seed: string, target: Address, owner: Address, assertCurrent?: () => void) {
+        assertCurrent?.();
         const code = await generateKitCode();
+        assertCurrent?.();
         const file = await createKit(seed, code, { wallet: target, owner, chainId, modules: MODULES.map(m => m.address) });
+        assertCurrent?.();
         setKit(file);
         setKitCode(code);
     }
-    async function unlocked(): Promise<string> {
+    async function unlocked(assertCurrent?: () => void): Promise<string> {
         if (!device)
             throw new Error('No encrypted owner key is stored on this device. Use recovery.');
         if (mnemonic) {
@@ -210,6 +247,7 @@ export function App() {
             return mnemonic;
         }
         const seed = await unlockDevice(device, passphrase);
+        assertCurrent?.();
         setMnemonic(seed);
         setPassphrase('');
         return seed;
@@ -254,16 +292,19 @@ export function App() {
             throw new Error('Sign in first.');
         if (!session.kycVerified)
             throw new Error('Complete MOCK identity verification first.');
+        const generation = signingGeneration.current;
+        const assertCurrent = () => assertRegistrationActivity(generation, session);
         const cardGuardian = validatedAddress(card);
         let seed: string;
         let record: DeviceRecord;
         if (device) {
-            seed = await unlocked();
+            seed = await unlocked(assertCurrent);
             record = device;
         }
         else {
             seed = generateOwnerSeed();
             record = await saveDevice(session.clientId, seed, passphrase, mnemonicToAddress(seed));
+            assertCurrent();
             setDevice(record);
             setMnemonic(seed);
             setPassphrase('');
@@ -276,58 +317,80 @@ export function App() {
         const result = await call<DeployResponse>('/relay/deploy', { token, body: { ...setup, saltNonce: setup.saltNonce.toString(), initializer: buildWalletInitializer(setup), wallet: predicted } });
         if (result.wallet.toLowerCase() !== predicted.toLowerCase())
             throw new Error('The relayer returned a wallet address that does not match your recovery rules. Do not fund it.');
-        await confirmedAction('Wallet created', result);
+        const deploymentBlock = await confirmedAction('Wallet created', result);
         const code = encodeCode({ v: 1, kind: 'setup', chainId, wallet: predicted, owner: record.owner, partnerGuardian: partner.guardian, sqGuardian: sq.guardian, saltNonce: setup.saltNonce.toString() });
-        const bound = await bindWallet(record, predicted, code, cardGuardian);
-        const registration = await registerDeviceOwnership(bound, seed, session.clientId, session.token, chainId);
+        const bound = await bindWallet(record, predicted, code, cardGuardian, deploymentBlock.toString());
+        assertCurrent();
         setDevice(bound);
         setWallet(predicted);
         setSetupCode(code);
-        setVerified(registration.verified);
-        await exportKit(seed, predicted, record.owner);
+        setCard(cardGuardian);
+        setVerified(false); setChecked(false); setReview(undefined);
+        if (!await registerCurrent(bound, seed, session, deploymentBlock, generation)) return;
+        const assertBound = () => assertRegistrationActivity(generation, session, bound);
+        await exportKit(seed, predicted, record.owner, assertBound);
+        assertBound();
         setNotice('Wallet created. Save your emergency kit and check the setup in the independent tool before depositing.');
     }
     async function registerExistingWallet() {
         if (!wallet || !device?.setupCode || !device.cardGuardian || !session) throw new Error('The saved wallet setup is missing. Restore the setup record before registering.');
-        const seed = await unlocked();
+        const generation = signingGeneration.current;
+        const assertCurrent = () => assertRegistrationActivity(generation, session, device);
+        const seed = await unlocked(assertCurrent);
+        assertCurrent();
         setVerified(false); setChecked(false);
         const requests = await readPending(wallet, MODULES);
+        assertCurrent();
         if (requests.length) await submitTx(buildCancelRecoveryTx(wallet, await nonce(wallet), requests.map(r => r.module)), 'settings', seed);
-        const result = await registerDeviceOwnership(device, seed, session.clientId, session.token, chainId);
-        setVerified(result.verified);
-        await exportKit(seed, wallet, device.owner);
+        assertCurrent();
+        if (!await registerCurrent(device, seed, session, undefined, generation)) return;
+        await exportKit(seed, wallet, device.owner, assertCurrent);
+        assertCurrent();
         setNotice('Ownership registration complete. Independently check the wallet before funding.');
     }
-    async function completeReplacement(seed: string, replacementRecord: DeviceRecord) {
+    async function completeReplacement(seed: string, replacementRecord: DeviceRecord, generation = signingGeneration.current) {
         if (!wallet || !session) throw new Error('No saved replacement key is available.');
+        const originalIdentity = { wallet, owner: device?.owner };
+        const assertCurrent = () => assertRegistrationActivity(generation, session, originalIdentity);
+        assertCurrent();
         setVerified(false); setChecked(false); setReview(undefined); setKit(undefined); setKitCode('');
         // Secure the recovered wallet before any optional service metadata/registration work.
-        await exportKit(seed, wallet, replacementRecord.owner);
+        await exportKit(seed, wallet, replacementRecord.owner, assertCurrent);
         const requests = await readPending(wallet, MODULES);
+        assertCurrent();
         if (requests.length) await submitTx(buildCancelRecoveryTx(wallet, await nonce(wallet), requests.map(r => r.module)), 'settings', seed);
+        assertCurrent();
         // Preserve the original initializer even on a fresh device. Only public metadata is fetched.
         let pendingRecord = replacementRecord;
         if (!pendingRecord.setupCode || !pendingRecord.cardGuardian) {
             const metadata = device?.wallet?.toLowerCase() === wallet.toLowerCase() && device.setupCode && device.cardGuardian
                 ? { wallet, owner: device.owner, verified: false, clientId: session.clientId, chainId, setupCode: device.setupCode, cardGuardian: device.cardGuardian }
                 : await call<WalletMetadataResponse>(`/wallets/${wallet}`, { token });
+            assertCurrent();
             const original = creationMetadata(pendingRecord, metadata);
             pendingRecord = await bindWallet(pendingRecord, wallet, original.setupCode, original.cardGuardian);
+            assertCurrent();
             setReplacement(pendingRecord);
         }
+        assertCurrent();
         const record = await promoteDevice(`${session.clientId}:replacement`, session.clientId, wallet);
+        assertCurrent();
         setDevice(record); setMnemonic(seed); setSetupCode(record.setupCode || ''); setCard(record.cardGuardian || '');
         setReplacement(undefined); setReplacementMnemonic(''); setNewPassphrase(''); setRequest(undefined); setRequestCode(''); setApproval('');
-        const registration = await registerDeviceOwnership(record, seed, session.clientId, session.token, chainId);
-        setVerified(registration.verified);
+        if (!await registerCurrent(record, seed, session, undefined, generation)) return;
+        assertRegistrationActivity(generation, session, record);
         setNotice('New owner installed and freshly verified. Other pending requests cleared. Save the new kit and re-check the original setup with your independently confirmed current owner before funding.');
     }
     async function installReplacement() {
         if (!wallet || !replacement || !session) throw new Error('No saved replacement key is available.');
+        const generation = signingGeneration.current;
+        const assertCurrent = () => assertRegistrationActivity(generation, session, { wallet, owner: device?.owner });
         const seed = replacementMnemonic || await unlockDevice(replacement, newPassphrase);
+        assertCurrent();
         const current = await owners(wallet);
+        assertCurrent();
         if (current.length !== 1 || current[0].toLowerCase() !== replacement.owner.toLowerCase()) throw new Error('The saved replacement key is not the sole current on-chain owner.');
-        await completeReplacement(seed, replacement);
+        await completeReplacement(seed, replacement, generation);
     }
     async function cancelAll() {
         if (!wallet)
@@ -378,8 +441,12 @@ export function App() {
     async function finalize(module: Address) {
         if (!wallet || !replacement || !session)
             throw new Error('The encrypted replacement key must be present on this device before finalizing.');
+        const generation = signingGeneration.current;
+        const assertCurrent = () => assertRegistrationActivity(generation, session, { wallet, owner: device?.owner });
         const seed = replacementMnemonic || await unlockDevice(replacement, newPassphrase);
+        assertCurrent();
         const requests = await readPending(wallet, MODULES);
+        assertCurrent();
         const selected = requests.find(r => r.module.toLowerCase() === module.toLowerCase());
         if (!selected || selected.executeAfter > BigInt(Math.floor(Date.now() / 1000)))
             throw new Error('The on-chain waiting period has not finished.');
@@ -389,13 +456,17 @@ export function App() {
         const current = await owners(wallet);
         if (current.length !== 1 || current[0].toLowerCase() !== replacement.owner.toLowerCase())
             throw new Error('The chain did not confirm your replacement key as owner.');
-        await completeReplacement(seed, replacement);
+        assertCurrent();
+        await completeReplacement(seed, replacement, generation);
     }
     async function rotate() {
         if (!wallet || !device || !session)
             throw new Error('Unlock your existing wallet first.');
-        const seed = await unlocked();
+        const generation = signingGeneration.current;
+        const assertCurrent = () => assertRegistrationActivity(generation, session, device);
+        const seed = await unlocked(assertCurrent);
         const requests = await readPending(wallet, MODULES);
+        assertCurrent();
         if (requests.length)
             await cancelAll();
         if (replacement?.wallet && replacement.wallet.toLowerCase() !== wallet.toLowerCase()) throw new Error('The saved replacement key belongs to another wallet.');
@@ -407,7 +478,8 @@ export function App() {
         const current = await owners(wallet);
         if (current.length !== 1 || current[0].toLowerCase() !== next.owner.toLowerCase())
             throw new Error('Replacement key was not confirmed on chain. The old local key was preserved.');
-        await completeReplacement(nextSeed, next);
+        assertCurrent();
+        await completeReplacement(nextSeed, next, generation);
     }
     function logout() { signingGeneration.current++; setSession(undefined); setMnemonic(''); setReplacementMnemonic(''); setPassphrase(''); setNewPassphrase(''); setDevice(undefined); setWallet(undefined); setKit(undefined); setKitCode(''); setReview(undefined); setSetupCode(''); setChecked(false); setPending([]); setAccount(undefined); setMailbox(undefined); setResetToken(''); setPassword(''); setReplacement(undefined); setRequest(undefined); setRequestCode(''); setApproval(''); setBalance(undefined); setEth(undefined); setVerified(false); setActivity([]); setNewPassword(''); setRecoverWallet(''); setNotice('Signed out and device key locked.'); }
     const classification = review && wallet ? classifyTransaction(wallet, review) : undefined;

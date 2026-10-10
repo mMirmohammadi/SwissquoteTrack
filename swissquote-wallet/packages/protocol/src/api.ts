@@ -24,7 +24,7 @@ export interface PartnerEnrollRequest { mockFace: string }
 export interface PartnerEnrollResponse { guardian: Address }
 export interface OwnershipProofWire { message: string; hash: Hex; signature: Hex; nonce: string }
 /** Current-owner expectation is authenticated by a fresh ownership proof, never by login alone. */
-export interface RegisterWalletRequest { setupCode: string; cardGuardian: Address; ownershipProof: OwnershipProofWire; expectedCurrentOwner?: Address }
+export interface RegisterWalletRequest { setupCode: string; cardGuardian: Address; ownershipProof: OwnershipProofWire; expectedCurrentOwner?: Address; minimumBlockNumber?: string }
 /** Public original setup stays immutable across owner replacement. */
 export interface WalletResponse { wallet: Address; owner: Address; verified: boolean; clientId: string; chainId: number; setupCode?: string; cardGuardian?: Address }
 export interface AccountResponse { balance: string; token: Address; decimals: 6; mock: true; address: Address }

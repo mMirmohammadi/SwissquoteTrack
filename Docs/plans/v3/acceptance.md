@@ -1,5 +1,13 @@
 # V3 local acceptance
 
+## Current registration-correction acceptance
+
+Managed job `bash-1435` exited 0: **518 passed, zero skipped**, typecheck/build passed, 423.3 seconds before cleanup. The independent [registration source inventory](<registration-test-inventory.md>) accounts for 476 Node tests and 42 contracts before this run. Suite counts: scripts12, recovery-tool26, wallet42, partner14, Swissquote85, protocol-package31, browser33, external-protocol100, security72, integration61, contracts42. Evidence: [gate log:3579–3580](<../../../AgentsLocal/46257332/v3/gate-registration-final.log#L3579-L3580>).
+
+The aggregate includes activity-guarded registration, retained unregistered wallets, receipt-bounded freshness, transport isolation and the original complete local-browser recovery. It does **not** establish the original Compound refusal cause or mined Compound execution. A tail-only status probe matched deliberate shutdown error text after `GATE PASS`; the managed job exit0 and complete log establish success, not that probe. Only owned isolated processes were stopped; the v2 demo remains untouched.
+
+## Historical checkpoints
+
 Historical checkpoint below: managed job bash-1236 completed with exit 0. The later live payment is separately [verified](<../../research/v3-live-payment-evidence.md>); Compound remains incomplete. **Post-live-fix aggregate acceptance passed: managed job bash-1358 exited 0, 480 passed, zero skipped, typecheck/build passed, duration 432.1 seconds before cleanup.** The independent [source inventory](<current-test-inventory.md>) matches 438 Node tests plus 42 contracts. Node suites: scripts 12, recovery tool 26, wallet 27, partner 14, Swissquote 64, protocol package 29, browser 33, protocol acceptance 100, security 72, integration 61. This current full gate includes real local waiting-period recovery and encrypted-kit/browser acceptance; it is not mined Compound or hardware/compliance evidence. Earlier post-fix gate bash-1346 passed 438 Node tests but failed one contract timestamp boundary because browser interval-mining configuration leaked into Mocha. The [clock-isolation correction](<gate-interval-mining-finding.md>) separately passed 42 contract tests (bash-1357); those separate results are not a complete aggregate pass.
 
 - Typecheck and build passed.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { encodeCode, decodeSetupCode, mnemonicToAddress, type WalletResponse } from '@sq/protocol';
 import type { Address } from 'viem';
 import { creationMetadata, registerDeviceOwnership } from '../src/lifecycle';
-import { promoteDevice, loadDevice, type DeviceRecord } from '../src/storage';
+import { bindWallet, promoteDevice, loadDevice, type DeviceRecord } from '../src/storage';
 const seed = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 const owner = mnemonicToAddress(seed);
 const wallet = '0x1111111111111111111111111111111111111111' as Address;
@@ -35,6 +35,21 @@ test('current owner registration uses unchanged creation setup and a fresh walle
     }
     globalThis.fetch = async (url) => String(url).endsWith('/wallets/challenge') ? Response.json({ nonce: 'fresh-mismatch' }) : Response.json({ ...response, owner: originalOwner });
     await assert.rejects(registerDeviceOwnership(record, seed, 'client', 'test-session', 31337), /did not verify this current owner/);
+  } finally { globalThis.fetch = original; }
+});
+test('registration serializes an optional bounded decimal receipt minimum and retries retain its persisted lower bound', async () => {
+  const original = globalThis.fetch; const bodies: Record<string, unknown>[] = [];
+  try {
+    globalThis.fetch = async (url, options) => String(url).endsWith('/wallets/challenge') ? Response.json({ nonce: 'fresh' }) : (bodies.push(JSON.parse(String(options?.body))), Response.json(response));
+    await registerDeviceOwnership(record, seed, 'client', 'session', 31337);
+    await registerDeviceOwnership(record, seed, 'client', 'session', 31337, 123n);
+    await registerDeviceOwnership({ ...record, deploymentBlock: '123' }, seed, 'client', 'session', 31337);
+    assert.equal('minimumBlockNumber' in bodies[0], false);
+    assert.equal(bodies[1].minimumBlockNumber, '123'); assert.equal(bodies[2].minimumBlockNumber, '123');
+    for (const minimum of ['01', '-1', ' 1', '1e3', '0x1', '18446744073709551616', '9'.repeat(21)]) await assert.rejects(registerDeviceOwnership({ ...record, deploymentBlock: minimum }, seed, 'client', 'session', 31337), /canonical unsigned/);
+    await assert.rejects(registerDeviceOwnership(record, seed, 'client', 'session', 31337, -1n), /canonical unsigned/);
+    await assert.rejects(registerDeviceOwnership({ ...record, deploymentBlock: 123 as unknown as string }, seed, 'client', 'session', 31337), /canonical unsigned/);
+    assert.equal(bodies.length, 3);
   } finally { globalThis.fetch = original; }
 });
 test('fresh-device creation metadata stays wallet-bound and never replaces local original setup', () => {
@@ -71,6 +86,9 @@ test('replacement promotion retains original setup/card and saved ciphertext, in
   const rows = new Map<string, DeviceRecord>();
   Object.defineProperty(globalThis, 'indexedDB', { configurable: true, value: indexedDbDouble(rows) });
   try {
+    const bound = await bindWallet(record, wallet, setupCode, cardGuardian, '123');
+    assert.equal((await loadDevice('client'))?.deploymentBlock, '123');
+    assert.equal(bound.envelope, record.envelope);
     rows.set('client', { ...record, owner: originalOwner });
     rows.set('pending', { ...record, id: 'pending', setupCode: undefined, cardGuardian: undefined, envelope: { ciphertext: 'encrypted-new-key' } as DeviceRecord['envelope'] });
     const installed = await promoteDevice('pending', 'client', wallet);

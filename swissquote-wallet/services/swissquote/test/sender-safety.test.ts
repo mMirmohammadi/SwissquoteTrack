@@ -16,7 +16,7 @@ const other='0x2222222222222222222222222222222222222222' as Address;
 const hash=hashMessage('test transaction');
 function adapter(chainId=11155111) {
   let sends=0;let receipt:ReceiptStatus={status:'pending'};let failure:Error|undefined;
-  const chain:ChainAdapter={chainId,computeWallet:async()=>wallet,verifyWallet:async()=>true,verifyOwnership:async()=>true,safeTxHash:async(_w,tx)=>hashMessage(JSON.stringify(tx)),verifyOwnerSignature:async()=>true,safeNonce:async()=> '0',recoveryHash:async()=>hash,isGuardian:async()=>true,signRecovery:async()=> '0x11',simulate:async()=>{},estimateGas:async()=>100n,send:async()=>{sends++;if(failure)throw failure;return hash;},receiptStatus:async()=>receipt};
+  const chain:ChainAdapter={chainId,registrationBlock: async () => 1n, computeWallet:async()=>wallet,verifyWallet:async()=>true,verifyOwnership:async()=>true,safeTxHash:async(_w,tx)=>hashMessage(JSON.stringify(tx)),verifyOwnerSignature:async()=>true,safeNonce:async()=> '0',recoveryHash:async()=>hash,isGuardian:async()=>true,signRecovery:async()=> '0x11',simulate:async()=>{},estimateGas:async()=>100n,send:async()=>{sends++;if(failure)throw failure;return hash;},receiptStatus:async()=>receipt};
   return {chain,get sends(){return sends;},settle:(value:ReceiptStatus)=>{receipt=value;},fail:(value:Error|undefined)=>{failure=value;}};
 }
 async function call(app:ReturnType<typeof createApp>,path:string,body?:unknown,token?:string) {

@@ -27,6 +27,8 @@ let hashDisagrees = false;
 let now = 1_800_000_000_000;
 const chain: ChainAdapter = {
   chainId: 31337,
+  // Fixed in-memory local head; a future minimum must fail, not invent chain state.
+  async registrationBlock(minimumBlockNumber) { if ((minimumBlockNumber ?? 0n) > 0n) throw new Error('Fixture registration head 0 is below requested minimum'); return 0n; },
   async computeWallet() { return wallet; },
   async verifyWallet() { return true; },
   async verifyOwnership(_wallet, message, signature) {

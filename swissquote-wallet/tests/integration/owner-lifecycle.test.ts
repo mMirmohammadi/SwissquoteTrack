@@ -48,6 +48,8 @@ async function fixture(t: TestContext) {
   } as unknown as PublicClient;
   const chain: ChainAdapter = {
     chainId: CHAIN_ID,
+    // Labelled local head; replacing an owner does not invent a later block height.
+    async registrationBlock(minimumBlockNumber) { if ((minimumBlockNumber ?? 0n) > 0n) throw new Error('Fixture registration head 0 is below requested minimum'); return 0n; },
     // LABELLED deterministic-address stand-in: rewriting original setup owner
     // changes its predicted address. No assertion of real CREATE2 execution here.
     async computeWallet(setup) { return setup.owner.toLowerCase() === O ? WALLET : OTHER; },

@@ -32,8 +32,8 @@ export class PendingTransactionError extends Error {
   constructor(hash: Hex) { const explorerUrl = etherscanTxUrl(hash); super(`Transaction pending — check Etherscan: ${explorerUrl}`); this.name = 'PendingTransactionError'; this.hash = hash; this.explorerUrl = explorerUrl; }
 }
 let confirmedBlock: bigint | undefined;
-export async function confirmed(hash: Hex, safeWallet?: Address): Promise<void> {
-  await confirmedOn(client, chainId, hash, safeWallet, block => { confirmedBlock = block; });
+export async function confirmed(hash: Hex, safeWallet?: Address): Promise<bigint> {
+  return confirmedOn(client, chainId, hash, safeWallet, block => { confirmedBlock = block; });
 }
 /** Never follow a receipt with state from an older load-balanced node. */
 export async function waitForBlockOn(rpc: { getBlockNumber(args?: { cacheTime: number }): Promise<bigint> }, minimum: bigint, timeoutMs = 30000): Promise<bigint> {
@@ -46,7 +46,7 @@ export async function waitForBlockOn(rpc: { getBlockNumber(args?: { cacheTime: n
   } while (Date.now() <= deadline);
   throw new Error('Public node has not caught up with the confirmed transaction; retry the wallet check.');
 }
-export async function confirmedOn(rpc: Pick<typeof client, 'waitForTransactionReceipt'>, network: number, hash: Hex, safeWallet?: Address, onConfirmed?: (block: bigint) => void): Promise<void> {
+export async function confirmedOn(rpc: Pick<typeof client, 'waitForTransactionReceipt'>, network: number, hash: Hex, safeWallet?: Address, onConfirmed?: (block: bigint) => void): Promise<bigint> {
   if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error('The service did not return a valid transaction hash.');
   let receipt: Awaited<ReturnType<typeof client.waitForTransactionReceipt>>;
   try { receipt = await rpc.waitForTransactionReceipt({ hash, timeout: network === 11155111 ? SEPOLIA_RECEIPT_TIMEOUT_MS : 90000 }); }
@@ -64,7 +64,9 @@ export async function confirmedOn(rpc: Pick<typeof client, 'waitForTransactionRe
     if (events.includes('ExecutionFailure')) throw new Error('Safe execution failed inside a successful network receipt. No successful payment was confirmed.');
     if (!events.includes('ExecutionSuccess')) throw new Error('The receipt does not prove successful Safe execution. Inspect chain state before retrying.');
   }
+  if (typeof receipt.blockNumber !== 'bigint' || receipt.blockNumber < 0n) throw new Error('The receipt does not contain a valid confirmed block number.');
   onConfirmed?.(receipt.blockNumber);
+  return receipt.blockNumber;
 }
 // Recovery reads use public RPC transports, independent of the Swissquote service.
 export async function readPending(wallet: Address, modules: readonly { address: Address; label: string }[]): Promise<PendingRecovery[]> {

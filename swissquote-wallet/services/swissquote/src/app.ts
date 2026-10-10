@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Store, opaque, digest, hashPassword, checkPassword, type User, type Session, type Challenge } from './store.ts';
 import { address, hex, integer, normalizeTx, classifyTransaction, requireThat, ApiError, MODULES, ZERO, USDC } from './policy.ts';
 import { hashMessage } from 'viem';
+import { RegistrationError, registrationContext, withRegistrationReads, registrationRead, classifiedRegistrationRead, parseMinimumBlock, registrationUnavailable, assertRegistrationActive, recheckRegistrationBlock } from './registration-reads.ts';
 import { strictSponsorship, strictClassification, transactionCalls, callAddresses, derivefreezeSubjects, refuse } from './policy.ts';
 import { screenAddresses } from './screening.ts';
 import { DAPP_REGISTRY, DAPP_ADDRESSES, checkDappBatch, describeEffects, simulateCalls, revalidateSimulation, DappSimulationError } from '@sq/protocol';
@@ -212,12 +213,14 @@ export function createApp(options:AppOptions={}) {
     if(post&&path==='/guardian/enroll') {kyc(user);if(!user.guardianKey) {const {generatePrivateKey,privateKeyToAccount}=await import('viem/accounts');user.guardianKey=generatePrivateKey();user.guardian=privateKeyToAccount(user.guardianKey).address.toLowerCase() as Address;store.put('user',user.id,user);}return {guardian:user.guardian,address:user.guardian,userRef:user.id,mock:true,label:'MOCK HSM: software guardian'};}
     if(post&&path==='/wallets/challenge') {kyc(user);const wallet=address(body.wallet);const nonce=opaque();const message=ownershipProofText(user.id,wallet,nonce,chain().chainId);store.put('challenge',nonce,{userId:user.id,purpose:'ownership',challenge:nonce,wallet,message,expires:now()+300_000});return {nonce,message};}
     if(post&&(path==='/wallets'||path==='/relay/deploy')) {
+      if(path==='/wallets'&&!registrationContext()) return withRegistrationReads(()=>route(req,path,body),options.registrationClock);
+      const minimumBlockNumber=path==='/wallets'?parseMinimumBlock(body.minimumBlockNumber):undefined;
       kyc(user);let input=body;
       if(typeof body.setupCode==='string') {const code=decodeSetupCode(body.setupCode);requireThat(code.chainId===chain().chainId,'Setup chain mismatch');const proof=body.ownershipProof as Record<string,unknown>|undefined;requireThat(proof&&typeof proof==='object','Ownership proof required');input={...code,cardGuardian:body.cardGuardian,nonce:proof.nonce,signature:proof.signature};}
       if(body.chainId!==undefined) requireThat(body.chainId===chain().chainId,'Request chain mismatch');
       const setup=normalizeSetup(input);requireThat(user.guardian&&setup.sqGuardian===user.guardian,'Guardian does not belong to this client',403);
       if(body.initializer!==undefined) requireThat(hex(body.initializer)===buildWalletInitializer({...setup,saltNonce:BigInt(setup.saltNonce)}).toLowerCase(),'Initializer does not match approved template',403);
-      const predicted=address(await chain().computeWallet(setup));if(input.wallet) requireThat(address(input.wallet)===predicted,'Wallet address does not match template',403);setup.wallet=predicted;
+      const predicted=address(await registrationRead(()=>chain().computeWallet(setup)));if(input.wallet) requireThat(address(input.wallet)===predicted,'Wallet address does not match template',403);setup.wallet=predicted;
       const existing=store.all<LinkedWallet>('wallet').find(row=>row.value.clientId===user.id);requireThat(!existing||existing.id===predicted,'One wallet per account',409);
       const deployed=store.get<string>('deployment',user.id);requireThat(!deployed||deployed===predicted,'One deployment per account',409);
       if(path==='/relay/deploy') {
@@ -236,9 +239,18 @@ export function createApp(options:AppOptions={}) {
       // Never derive the expectation from RPC owners or login. Exact rules and a
       // fresh current-owner EIP-1271 proof must both pass before persisting it.
       const originalSetup=linked?.setup??(setup as Setup & {wallet:Address});
-      requireThat(await chain().verifyWallet(originalSetup,{expectedCurrentOwner:currentOwner}),'Wallet rules do not match template',403);
-      requireThat(await chain().verifyOwnership(predicted,item.message!,hex(input.signature)),'Invalid EIP-1271 ownership proof',403);
+      if(typeof chain().registrationBlock!=='function') throw registrationUnavailable('registration_capability_missing');
+      let blockNumber:bigint;
+      try {blockNumber=await registrationRead(()=>chain().registrationBlock(minimumBlockNumber));} catch(error) {if(error instanceof ApiError) throw error;throw registrationUnavailable();}
+      if(typeof blockNumber!=='bigint'||blockNumber<0n||(minimumBlockNumber!==undefined&&blockNumber<minimumBlockNumber)) throw registrationUnavailable();
+      const rules=await classifiedRegistrationRead(()=>chain().verifyWallet(originalSetup,{expectedCurrentOwner:currentOwner,blockNumber}));
+      if(!rules) throw new RegistrationError(403,'Wallet rules do not match template','registration_rules_refused');
+      const proof=await classifiedRegistrationRead(()=>chain().verifyOwnership(predicted,item.message!,hex(input.signature),{blockNumber}));
+      if(!proof) throw new RegistrationError(403,'Invalid EIP-1271 ownership proof','registration_proof_refused');
+      await recheckRegistrationBlock();
+      assertRegistrationActive();
       store.transaction(()=> {
+        assertRegistrationActive();
         const current=store.get<LinkedWallet>('wallet',predicted);
         requireThat(!current||(current.clientId===user.id&&sameSetup(current.setup,originalSetup)&&current.currentOwner===linked?.currentOwner),'Wallet verification changed; use a fresh challenge',409);
         store.put('wallet',predicted,{clientId:user.id,setup:current?.setup??originalSetup,verified:true,currentOwner});
@@ -282,7 +294,7 @@ export function createApp(options:AppOptions={}) {
       if(path.startsWith('/auth/')) {const key=req.socket.remoteAddress??'local';const bucket=attempts.get(key);const value=!bucket||now()-bucket.window>=60_000?{window:now(),count:0}:bucket;value.count++;attempts.set(key,value);requireThat(value.count<=60,'Authentication rate limit',429);}
       let body:Record<string,unknown>={};if(req.method==='POST') {requireThat((req.headers['content-type']??'').startsWith('application/json'),'Content-Type application/json required',415);let length=0;const chunks:Buffer[]=[];for await(const chunk of req) {const bytes=Buffer.from(chunk);length+=bytes.length;requireThat(length<=128*1024,'Request too large',413);chunks.push(bytes);}try {body=JSON.parse(Buffer.concat(chunks).toString()||'{}') as Record<string,unknown>;} catch {throw new ApiError(400,'Invalid JSON');}requireThat(body&&typeof body==='object'&&!Array.isArray(body),'Expected JSON object');}
       auditPath=path;auditBody=body;const result=await route(req,path,body);store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path,decision:'allowed',flags,strictSponsorship:strict,wallet:body.wallet,effectsHash:body.effectsHash,safeTxHash:(result as {hash?:string})?.hash});res.statusCode=200;res.end(JSON.stringify(result));
-    } catch(error) {const code=error instanceof ApiError?error.code:error instanceof DappSimulationError?(error.code==='SIMULATION_UNAVAILABLE'?'NOT_SPONSORED':error.code):undefined;const reason=error instanceof ApiError||error instanceof DappSimulationError||error instanceof BroadcastUncertainError?error.message:'Operation failed; inspect local service and chain configuration';store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path:auditPath,decision:'refused',flags,strictSponsorship:strict,code,reason,wallet:auditBody.wallet,effectsHash:auditBody.effectsHash});res.statusCode=error instanceof ApiError?error.status:error instanceof DappSimulationError?403:502;res.end(JSON.stringify({error:reason,code}));}
+    } catch(error) {const code=error instanceof RegistrationError?error.registrationCode:error instanceof ApiError?error.code:error instanceof DappSimulationError?(error.code==='SIMULATION_UNAVAILABLE'?'NOT_SPONSORED':error.code):undefined;const reason=error instanceof ApiError||error instanceof DappSimulationError||error instanceof BroadcastUncertainError?error.message:'Operation failed; inspect local service and chain configuration';store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path:auditPath,decision:'refused',flags,strictSponsorship:strict,code,reason,wallet:auditBody.wallet,effectsHash:auditBody.effectsHash});res.statusCode=error instanceof ApiError?error.status:error instanceof DappSimulationError?403:502;res.end(JSON.stringify({error:reason,code}));}
   }
   const server=createServer((req,res)=>{void handler(req,res);});
   return {server,handler,store,close:async()=>{if(server.listening) await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));store.close();}};

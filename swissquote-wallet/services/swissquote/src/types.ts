@@ -17,7 +17,8 @@ export interface ChainAdapter {
   chainId: number;
   computeWallet(setup: Setup): Promise<Address>;
   verifyWallet(setup: Setup & {wallet: Address}, options?: VerificationOptions): Promise<boolean>;
-  verifyOwnership(wallet: Address, message: string, signature: Hex): Promise<boolean>;
+  registrationBlock(minimumBlockNumber?: bigint): Promise<bigint>;
+  verifyOwnership(wallet: Address, message: string, signature: Hex, options?: {blockNumber?: bigint}): Promise<boolean>;
   safeTxHash(wallet: Address, tx: SafeTx): Promise<Hex>;
   verifyOwnerSignature(wallet: Address, tx: SafeTx, signature: Hex): Promise<boolean>;
   safeNonce(wallet: Address): Promise<string>;
@@ -40,6 +41,7 @@ export interface WebAuthnAdapter {
 export interface AppOptions {
   dataDir?: string; databasePath?: string; chain?: ChainAdapter; webauthn?: WebAuthnAdapter;
   now?: () => number; allowMock?: boolean; allowedOrigins?: string[];
+  registrationClock?: import('./registration-reads.ts').RegistrationClock;
   accountAddress?: Address;
   accountDailyLimit?: number; globalDailyLimit?: number; gasCap?: bigint; initialMockBalance?: string;
   modules?: readonly Address[]; usdc?: Address; multiSendCallOnly?: Address;

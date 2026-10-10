@@ -8,6 +8,8 @@ export interface DeviceRecord {
   envelope: Awaited<ReturnType<typeof encryptSeed>>;
   createdAt: string;
   setupCode?: string;
+  /** Public confirmed deployment receipt lower bound; never owner material. */
+  deploymentBlock?: string;
   cardGuardian?: Address;
   kitSavedAt?: string;
   independentCheckedAt?: string;
@@ -48,8 +50,8 @@ export async function updateDeviceEvidence(id: string, patch: Pick<Partial<Devic
   return next;
 }
 export async function loadDevice(id: string): Promise<DeviceRecord | undefined> { return request('readonly', store => store.get(id)); }
-export async function bindWallet(record: DeviceRecord, wallet: Address, setupCode?: string, cardGuardian?: Address): Promise<DeviceRecord> {
-  const next = { ...record, wallet, setupCode: setupCode ?? record.setupCode, cardGuardian: cardGuardian ?? record.cardGuardian }; await request('readwrite', store => store.put(next)); return next;
+export async function bindWallet(record: DeviceRecord, wallet: Address, setupCode?: string, cardGuardian?: Address, deploymentBlock?: string): Promise<DeviceRecord> {
+  const next = { ...record, wallet, setupCode: setupCode ?? record.setupCode, cardGuardian: cardGuardian ?? record.cardGuardian, deploymentBlock: deploymentBlock ?? record.deploymentBlock }; await request('readwrite', store => store.put(next)); return next;
 }
 export async function promoteDevice(pendingId: string, currentId: string, wallet: Address): Promise<DeviceRecord> {
   const pending = await loadDevice(pendingId);

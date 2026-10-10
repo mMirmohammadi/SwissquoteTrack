@@ -90,6 +90,8 @@ test('v3 both helper service approvals pass through Swissquote recovery and fina
   const operations: ChainOperation[] = []; const stages: string[] = [];
   const chain: ChainAdapter = {
     chainId: 31337,
+    // This orchestration adapter has only an in-memory local head, not fakeClient's polling head.
+    async registrationBlock(minimumBlockNumber) { if ((minimumBlockNumber ?? 0n) > 0n) throw new Error('Fixture registration head 0 is below requested minimum'); return 0n; },
     async computeWallet() { return wallet; }, async verifyWallet() { return true; },
     async verifyOwnership(address, message, signature) { const { hashMessage, verifyTypedData } = await import('viem'); return verifyTypedData({ ...p.safeMessageTypedData(address, hashMessage(message), 31337), address: owner, signature }); },
     async safeTxHash(address, tx) { return p.hashSafeTx(address, p.safeTxFromWire(tx as p.SafeTxWire), 31337); },

@@ -31,7 +31,7 @@ test('API adapter uses actual endpoint and Bearer header, surfaces HTTP failures
 });
 test('network receipt success does not fake a successful Safe transaction', async () => {
   const original = client.waitForTransactionReceipt;
-  const receipt = (status: string, event?: 'ExecutionSuccess'|'ExecutionFailure') => ({ status, logs: event ? [{ address: wallet, topics: encodeEventTopics({ abi: safeAbi, eventName: event, args: { txHash: hash } }), data: encodeAbiParameters([{type:'uint256'}], [0n]) }] : [] });
+  const receipt = (status: string, event?: 'ExecutionSuccess'|'ExecutionFailure') => ({ status, blockNumber: 123n, logs: event ? [{ address: wallet, topics: encodeEventTopics({ abi: safeAbi, eventName: event, args: { txHash: hash } }), data: encodeAbiParameters([{type:'uint256'}], [0n]) }] : [] });
   try {
     (client as unknown as {waitForTransactionReceipt: unknown}).waitForTransactionReceipt = async () => receipt('reverted'); await assert.rejects(confirmed(hash), /reverted/);
     (client as unknown as {waitForTransactionReceipt: unknown}).waitForTransactionReceipt = async () => receipt('success', 'ExecutionFailure'); await assert.rejects(confirmed(hash, wallet), /Safe execution failed/);

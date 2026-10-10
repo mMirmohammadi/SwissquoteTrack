@@ -59,6 +59,6 @@ export async function signOwnershipProof(privateKey: Hex, clientId: string, wall
   const signature = await privateKeyToAccount(privateKey).signTypedData(safeMessageTypedData(wallet, hash, chainId));
   return { message, hash, signature };
 }
-export async function verifyOwnershipProof(client: PublicClient, wallet: Address, hash: Hex, signature: Hex): Promise<boolean> {
-  try { return await client.readContract({ address: wallet, abi: fallbackHandlerAbi, functionName: 'isValidSignature', args: [hash, signature] }) === '0x1626ba7e'; } catch { return false; }
+export async function verifyOwnershipProof(client: PublicClient, wallet: Address, hash: Hex, signature: Hex, options: { blockNumber?: bigint } = {}): Promise<boolean> {
+  try { return await client.readContract({ ...options, address: wallet, abi: fallbackHandlerAbi, functionName: 'isValidSignature', args: [hash, signature] }) === '0x1626ba7e'; } catch { return false; }
 }

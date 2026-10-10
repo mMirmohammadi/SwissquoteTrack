@@ -216,7 +216,26 @@ async function run() {
     const cdp = await walletContext.newCDPSession(page);
     await cdp.send('WebAuthn.enable');
     await cdp.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: true, automaticPresenceSimulation: true } });
-    const idle = async () => { await page.locator('.status.info').waitFor({ state: 'hidden', timeout: remaining(85000) }); assert.equal(await page.locator('.status.error').count(), 0); };
+    const idle = async () => {
+      await page.locator('.status.info').waitFor({ state: 'hidden', timeout: remaining(85000) });
+      const errors = page.locator('.status.error');
+      const count = await errors.count();
+      if (count) {
+        // Locally defined categories only; never publish arbitrary UI/API strings.
+        const message = await errors.first().innerText();
+        const categories = new Map([
+          ['Wallet rules do not match template', 'wallet_rules_verification_refused'],
+          ['Ownership proof invalid', 'ownership_proof_refused'],
+          ['Invalid EIP-1271 ownership proof', 'ownership_proof_refused'],
+          ['Wallet registration temporarily unavailable; retry with a fresh challenge', 'registration_temporarily_unavailable'],
+          ['Registration RPC unavailable', 'registration_rpc_unavailable'],
+          ['Registration snapshot unavailable', 'registration_snapshot_unavailable'],
+          ['Registration deadline exceeded', 'registration_deadline_exceeded'],
+        ]);
+        evidence.uiFailure = { stage, category: categories.get(message) ?? 'other_ui_error', count };
+      }
+      assert.equal(count, 0);
+    };
     const click = async name => { await page.getByRole('button', { name }).click({ timeout: remaining() }); await idle(); };
     const actionResponse = async (path, action) => {
       const pending = page.waitForResponse(response => response.url() === `${SQ}${path}` && response.request().method() === 'POST', { timeout: remaining(65000) });
@@ -266,6 +285,7 @@ async function run() {
     assert.ok(!same(deployChain.tx.from, evidence.owner) && !same(deployChain.tx.from, evidence.wallet));
     assert.ok(same(deployChain.tx.from, expectedRelayer));
     evidence.relayer = deployChain.tx.from;
+    stage = 'deployment completion and ownership registration UI';
     await idle(); await page.getByText('Verified as yours', { exact: true }).waitFor({ timeout: remaining() });
     // Wallet/setup binding occurs after mined deploy. Retain it before any funding.
     await retention.snapshot(walletContext, { owner: evidence.owner, wallet: evidence.wallet, requireDevice: true });
