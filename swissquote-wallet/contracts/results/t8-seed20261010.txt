@@ -1,0 +1,150 @@
+
+
+  T8 two module instances instead of X: A {R,P} 60 s and B {R,SQ} 120 s (red-team change 3)
+      evidence: setup: W owners [0x897063a2795Cb70C11293d04620F2CfFFe5822bd]; modules [0x1ce91BD07A34c2c166A874Cef0B16fefA5D16A20,0x569E8266b6ff199D0067Ec99edF279d76432eE5a]; A guardians [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307] thr 2; B guardians [0x6D898E5CE86BF46c2ff83F863da657AcDcd1Ca5D,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307] thr 2
+      evidence: A: P confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: B: SQ confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: A: SQ confirmRecovery(W,[attacker],1,true) -> reverted "SM: sender not a guardian"
+      evidence: A: executeRecovery(W,[attacker],1) by SQ after P's approval -> reverted "SM: confirmed signatures less than threshold"
+      evidence: A: P confirmRecovery(W,[attacker],1,true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: A: multiConfirmRecovery([P sig, SQ sig], execute=true) -> reverted "SM: Signer not a guardian"
+      evidence: A: multiConfirmRecovery([P sig, 'R' sig made by SQ], execute=true) -> reverted "SM: Invalid guardian signature"
+      evidence: A: multiConfirmRecovery([P sig, R entry with empty signature]) sent by P -> reverted "SM: null signature should have the signer as the sender"
+      evidence: A: P's signature made for B's recovery hash, submitted to A -> reverted "SM: Invalid guardian signature"
+      evidence: B: P confirmRecovery(W,[attacker],1,true) -> reverted "SM: sender not a guardian"
+      evidence: B: executeRecovery(W,[attacker],1) by P after SQ's approval -> reverted "SM: confirmed signatures less than threshold"
+      evidence: B: SQ confirmRecovery(W,[attacker],1,true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: B: multiConfirmRecovery([P sig, SQ sig], execute=true) -> reverted "SM: Signer not a guardian"
+      evidence: B: multiConfirmRecovery([SQ sig, 'R' sig made by P], execute=true) -> reverted "SM: Invalid guardian signature"
+      evidence: B: SQ's signature made for A's recovery hash, submitted to B -> reverted "SM: Invalid guardian signature"
+      evidence: A: P calls addGuardianWithThreshold(SQ,1) directly -> reverted "revert without reason"
+      evidence: W.execTransaction signed by P + SQ -> A.addGuardianWithThreshold(SQ,1) -> reverted "GS026"
+      evidence: A: finalizeRecovery(W) -> reverted "SM: no ongoing recovery"
+      evidence: B: finalizeRecovery(W) -> reverted "SM: no ongoing recovery"
+      evidence: approvals for [attacker]: A 1 of 2, B 1 of 2; W owners [0x897063a2795Cb70C11293d04620F2CfFFe5822bd]
+    ✔ T8a P + SQ (plus attacker/outsider/relayer) cannot recover on either instance (966ms)
+      evidence: A: multiConfirmRecovery(W,[newKey],1,[R sig, P sig],execute=false) by relayer -> succeeded
+      evidence: A: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: A: executeAfter - execute block time = 60 s
+      evidence: A: finalizeRecovery(W) at executeAfter-1 -> reverted "SM: recovery period still pending"
+      evidence: A: finalizeRecovery(W) at executeAfter by an unrelated outsider -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522), threshold 1
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+      evidence: other instance still enabled: true, pending request there: false
+    ✔ T8b R + P recover on instance A: owner changes only after 60 s; old Ph -> GS026 (210ms)
+      evidence: B: multiConfirmRecovery(W,[newKey],1,[R sig, SQ sig],execute=false) by relayer -> succeeded
+      evidence: B: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: B: executeAfter - execute block time = 120 s
+      evidence: B: finalizeRecovery(W) at executeAfter-1 -> reverted "SM: recovery period still pending"
+      evidence: B: finalizeRecovery(W) at executeAfter by an unrelated outsider -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522), threshold 1
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+      evidence: other instance still enabled: true, pending request there: false
+    ✔ T8b R + SQ recover on instance B: owner changes only after 120 s; old Ph -> GS026 (209ms)
+      evidence: A: multiConfirmRecovery(W,[P],1,[R sig, P sig],execute=true) by relayer -> succeeded
+      evidence: A: finalizeRecovery(W) at executeAfter, by an outsider -> reverted "SM: new owner cannot be guardian"
+      evidence: A request still stored after the failed finalize: {approvals 2, executeAfter 1791640908, newOwners [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342]}
+      evidence: A: R + P confirm the corrected request [newKey] at A's new nonce (execute=false) -> succeeded
+      evidence: A approvals for [newKey] = 2 (A has only 2 guardians)
+      evidence: A: executeRecovery(W,[newKey],1) to replace the stuck request -> reverted "SM: not enough approvals for replacement"
+      evidence: A: multiConfirmRecovery(W,[newKey],1,[R,P],execute=true) to replace it -> reverted "SM: not enough approvals for replacement"
+      evidence: A: finalizeRecovery(W) one week later -> reverted "SM: new owner cannot be guardian"
+    ✔ T8c stuck request on A (newOwners = [P], a guardian of A): finalize reverts; A cannot replace it with 2 approvals (197ms)
+      evidence: A: multiConfirmRecovery(W,[P],1,[R sig, P sig],execute=true) by relayer -> succeeded
+      evidence: A: finalizeRecovery(W) at executeAfter, by an outsider -> reverted "SM: new owner cannot be guardian"
+      evidence: B: multiConfirmRecovery(W,[newKey],1,[R sig, SQ sig],execute=true) -> succeeded
+      evidence: B: finalizeRecovery(W) at executeAfter by an outsider -> succeeded
+      evidence: after the rescue W owners [0xb22724B6c7D109a7f41bb2C9673776f342766522]; A's stale request {approvals 2, executeAfter 1791640908, newOwners [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342]}
+      evidence: A: finalizeRecovery(W) after the rescue, before any cancel -> reverted "SM: new owner cannot be guardian"
+      evidence: hazard: W[signed newKey] -> A.revokeGuardianWithThreshold(prev, P, 1) WITHOUT cancelling first -> succeeded
+      evidence: hazard: outsider calls A.finalizeRecovery(W) -> succeeded
+      evidence: hazard: W owners now [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342] (P = 0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342)
+      evidence: W.execTransaction[signed newKey] -> A.cancelRecovery() -> succeeded
+      evidence: A.getRecoveryRequest(W) after cancel: {approvals 0, executeAfter 0, newOwners []}
+      evidence: A: finalizeRecovery(W) after cancel -> reverted "SM: no ongoing recovery"
+    ✔ T8d rescue via B: R + SQ recover on B to newKey; newKey cancels A's stuck request through W (and why cancel, not guardian removal) (236ms)
+      evidence: A: R + P confirm [NA] (execute=false) -> succeeded
+      evidence: B: R + SQ confirm [NB] (execute=false) -> succeeded
+      evidence: A: executeRecovery(W,[NA],1) -> succeeded
+      evidence: B: executeRecovery(W,[NB],1) (next block) -> succeeded
+      evidence: pending: A {approvals 2, executeAfter 1791640910, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; B {approvals 2, executeAfter 1791640971, newOwners [0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE]}
+      evidence: NA signs W -> B.cancelRecovery() before A is finalized (NA is not an owner yet) -> reverted "GS026"
+      evidence: A: finalizeRecovery(W) at A's executeAfter -> succeeded
+      evidence: B: finalizeRecovery(W) right after A's finalize -> reverted "SM: recovery period still pending"
+      evidence: e1 (NA does nothing): B: finalizeRecovery(W) at B's executeAfter by an outsider -> succeeded
+      evidence: e1: W owners [0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE] (NB = 0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE, NA = 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: e1: NA signs a transfer -> reverted "GS026"
+      evidence: e2: chain time after revert 1791640911 < B executeAfter 1791640971: true
+      evidence: e2: W.execTransaction[signed NA] -> B.cancelRecovery() during B's wait -> succeeded
+      evidence: e2: B: finalizeRecovery(W) after B's executeAfter -> reverted "SM: no ongoing recovery"
+    ✔ T8e race, same start: A's request (60 s) finalizes first, but B's (120 s) still finalizes later and overwrites it unless A's new owner cancels B (228ms)
+      evidence: B: R + SQ confirm and execute [NB] -> succeeded
+      evidence: A: R + P confirm and execute [NA], 70 s later -> succeeded
+      evidence: executeAfter: B 1791640969 < A 1791640980: true
+      evidence: B: finalizeRecovery(W) at B's executeAfter -> succeeded
+      evidence: A: finalizeRecovery(W) at that moment -> reverted "SM: recovery period still pending"
+      evidence: A: finalizeRecovery(W) at A's executeAfter (nobody cancelled) -> succeeded
+      evidence: W owners [0xb22724B6c7D109a7f41bb2C9673776f342766522] (NA = 0xb22724B6c7D109a7f41bb2C9673776f342766522): the request finalized LAST decides
+    ✔ T8e2 race, B started 70 s earlier: B matures first (t+120 < t+130); A then finalizes and overwrites unless B's new owner cancels A (195ms)
+      T8f result (seed 20261010, 46.7 s): runs=100 actions=4000
+        finalizeRecovery (anyone)              ok=0 reverted=530
+        EOA confirmRecovery                    ok=114 reverted=673
+        executeRecovery                        ok=0 reverted=490
+        time jump                              ok=493 reverted=0
+        EOA guardian admin                     ok=0 reverted=138
+        multiConfirmRecovery                   ok=20 reverted=1052
+        attack on W (non-owner sig / direct)   ok=0 reverted=382
+        EOA cancelRecovery/invalidateNonce     ok=53 reverted=55
+        revert reasons:
+            640  SM: confirmed signatures less than threshold
+            585  SM: no ongoing recovery
+            574  SM: sender not a guardian
+            572  SM: Signer not a guardian
+            237  GS026
+            196  SM: Invalid guardian signature
+            174  SM: invalid new threshold
+            138  revert without reason
+             55  GS030
+             51  GS104
+             45  SM: duplicate signers/invalid ordering
+             39  GS031
+             14  SM: null signature should have the signer as the sender
+      evidence: steps where a single coalition approval was recorded: A (P) 1123, B (SQ) 1087
+      evidence: invariant violations: 0
+    ✔ T8f random coalition without R and Ph: 100 runs x 40 actions (seed 20261010) -> W's owners never change (46671ms)
+      T8f-control result: runs=50 actions=1994
+        finalizeRecovery (anyone)              ok=2 reverted=265
+        EOA confirmRecovery                    ok=95 reverted=331
+        executeRecovery                        ok=2 reverted=221
+        time jump                              ok=230 reverted=0
+        EOA guardian admin                     ok=0 reverted=83
+        multiConfirmRecovery                   ok=26 reverted=496
+        attack on W (non-owner sig / direct)   ok=0 reverted=188
+        EOA cancelRecovery/invalidateNonce     ok=27 reverted=28
+        revert reasons:
+            336  SM: confirmed signatures less than threshold
+            278  SM: no ongoing recovery
+            234  SM: sender not a guardian
+            219  SM: Signer not a guardian
+            118  GS026
+            113  SM: Invalid guardian signature
+            100  SM: invalid new threshold
+             83  revert without reason
+             31  SM: duplicate signers/invalid ordering
+             29  GS030
+             25  GS104
+             16  GS031
+             14  SM: null signature should have the signer as the sender
+             10  SM: new owner cannot be guardian
+              5  SM: recovery period still pending
+              1  SM: not enough approvals for replacement
+      evidence: runs in which the coalition replaced W's owner: 2/50
+      evidence: first takeover: {"run":12,"step":33,"action":"finalizeRecovery (anyone)","owners":["0x53bc2c70818E618f9F9f6a45fF34800145F2b42A"]}
+    ✔ T8f-control same generator with a weak A (guardians {P, SQ}), 50 runs -> must find an owner change (6111ms)
+
+
+  9 passing (55s)
+
+exit 0

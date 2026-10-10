@@ -1,0 +1,22 @@
+# Agent-local scratch (durable docs and skills remain versioned)
+/AgentsLocal/
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and runtime debris
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+*.log
+.DS_Store
+.pnpm-store/
+swissquote-wallet/**/data/
+swissquote-wallet/**/dist/
+swissquote-wallet/contracts/artifacts/
+swissquote-wallet/contracts/cache/
+swissquote-wallet/**/test-results/
+swissquote-wallet/**/playwright-report/

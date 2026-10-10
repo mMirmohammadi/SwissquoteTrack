@@ -1,0 +1,68 @@
+2026-10-10T13:44:15Z
+
+
+  T6 randomised property: a coalition without R and without Ph never changes W's owners
+      T6 result (seed 2, 78.1 s): runs=200 actions=8000
+        EOA cancelRecovery/invalidateNonce   ok=98 reverted=124
+        executeRecovery                      ok=0 reverted=920
+        multiConfirmRecovery                 ok=48 reverted=1732
+        finalizeRecovery                     ok=0 reverted=931
+        time jump                            ok=855 reverted=0
+        X.exec confirmRecovery               ok=546 reverted=742
+        X.exec admin on X / module           ok=198 reverted=275
+        X.exec multiConfirm(null sig as X)   ok=188 reverted=252
+        direct attack on W                   ok=0 reverted=416
+        EOA confirmRecovery                  ok=0 reverted=453
+        EOA guardian admin                   ok=0 reverted=222
+        revert reasons:
+           1269  GS013
+           1055  SM: no ongoing recovery
+            974  SM: confirmed signatures less than threshold
+            843  SM: Signer not a guardian
+            664  SM: sender not a guardian
+            255  SM: Invalid guardian signature
+            246  GS026
+            229  SM: invalid new threshold
+            222  revert without reason
+            140  SM: duplicate signers/invalid ordering
+             70  GS104
+             61  GS031
+             39  GS030
+      evidence: steps where X's single approval existed for some proposed owner set: 6178
+      evidence: invariant violations: 0
+    ✔ T6 Candidate B: 200 random runs x 40 actions (seed 2) -> owners of W never change (78783ms)
+      T6-control result: runs=50 actions=1987
+        EOA cancelRecovery/invalidateNonce   ok=29 reverted=30
+        executeRecovery                      ok=1 reverted=226
+        multiConfirmRecovery                 ok=20 reverted=412
+        finalizeRecovery                     ok=2 reverted=239
+        time jump                            ok=212 reverted=0
+        X.exec confirmRecovery               ok=0 reverted=310
+        X.exec admin on X / module           ok=40 reverted=89
+        X.exec multiConfirm(null sig as X)   ok=0 reverted=112
+        direct attack on W                   ok=0 reverted=104
+        EOA confirmRecovery                  ok=24 reverted=75
+        EOA guardian admin                   ok=0 reverted=62
+        revert reasons:
+            511  GS013
+            275  SM: confirmed signatures less than threshold
+            263  SM: no ongoing recovery
+            262  SM: Signer not a guardian
+             75  SM: invalid new threshold
+             62  revert without reason
+             60  SM: sender not a guardian
+             60  GS026
+             22  SM: null signature should have the signer as the sender
+             20  GS104
+             19  SM: duplicate signers/invalid ordering
+             13  GS030
+             11  GS031
+              6  SM: recovery period still pending
+      evidence: runs in which P+SQ replaced WA's owner: 2/50
+    ✔ T6-control Candidate A: same generator, 50 runs -> must find an owner change (test has teeth) (7596ms)
+
+
+  2 passing (1m)
+
+exit=0
+2026-10-10T13:45:42Z

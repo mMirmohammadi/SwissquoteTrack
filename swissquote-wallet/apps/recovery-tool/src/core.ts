@@ -1,0 +1,69 @@
+import { createPublicClient, http, isAddress, keccak256, type Address, type PublicClient } from 'viem';
+import { sepolia, hardhat } from 'viem/chains';
+import {
+  CHAIN_ID, LOCAL_CHAIN_ID, PUBLIC_RPC_URLS, MODULES, MODULE_CODE_HASHES, generateCardSeed,
+  mnemonicToAddress, mnemonicToPrivateKey, ownerFingerprint, decodeSetupCode,
+  decodeRequestCode, encodeCode, verifyWalletIndependent, assertRecoveryHash,
+  signRecovery, moduleAbi, openKit, type EmergencyKit, type RecoveryRequest,
+} from './protocol.js';
+import { normalizeWords, validateCodeInput, pinnedRpcUrls, parseJson, sameAddress } from './validation.js';
+
+export type ToolConfig = { chainId: number; rpcUrls?: string };
+export function makeClients(config: ToolConfig): PublicClient[] {
+  const chain = config.chainId === CHAIN_ID ? sepolia : config.chainId === LOCAL_CHAIN_ID ? hardhat : undefined;
+  if (!chain) throw new Error('Unsupported chain.');
+  const urls = pinnedRpcUrls(config.chainId, config.rpcUrls, PUBLIC_RPC_URLS);
+  if (urls.length !== 2 || new Set(urls).size !== 2) throw new Error('Two independent public RPCs are required.');
+  return urls.map(url => createPublicClient({ chain, transport: http(url, { timeout: 12_000, retryCount: 1 }) }) as PublicClient);
+}
+export function createCard(): { words: string; guardian: string } {
+  const words = generateCardSeed();
+  return { words, guardian: mnemonicToAddress(words) };
+}
+/** expectedCurrentOwner must be supplied independently by the user, never filled from RPC getOwners. */
+export async function checkWallet(code: string, words: string, config: ToolConfig, clients = makeClients(config), expectedCurrentOwner?: string) {
+  const setup = decodeSetupCode(validateCodeInput(code));
+  if (setup.chainId !== config.chainId) throw new Error('Code chain does not match this tool.');
+  const currentOwner = expectedCurrentOwner?.trim() || undefined;
+  if (currentOwner && !isAddress(currentOwner, { strict: false })) throw new Error('Enter a valid independently confirmed current-owner address.');
+  const cardGuardian = mnemonicToAddress(normalizeWords(words));
+  return verifyWalletIndependent(clients, { owner: setup.owner, cardGuardian,
+    partnerGuardian: setup.partnerGuardian, sqGuardian: setup.sqGuardian,
+    saltNonce: BigInt(setup.saltNonce), chainId: setup.chainId }, { expectedWallet: setup.wallet, fromBlock: 0n, expectedCurrentOwner: currentOwner as Address | undefined });
+}
+export type RecoveryReview = { request: RecoveryRequest; signer: string; fingerprint: string };
+export async function reviewRecovery(code: string, words: string, config: ToolConfig, clients = makeClients(config)): Promise<RecoveryReview> {
+  const wire = decodeRequestCode(validateCodeInput(code));
+  if (wire.chainId !== config.chainId) throw new Error('Code chain does not match this tool.');
+  if (!MODULES.some(module => sameAddress(module, wire.module))) throw new Error('Unknown recovery module.');
+  const request: RecoveryRequest = { wallet: wire.wallet, module: wire.module, newOwner: wire.newOwner, nonce: BigInt(wire.nonce), chainId: wire.chainId };
+  const signer = mnemonicToAddress(normalizeWords(words));
+  if (sameAddress(signer, request.newOwner)) throw new Error('New owner cannot be the card guardian.');
+  if (clients.length !== 2 || new Set(clients).size !== 2) throw new Error('Two RPC checks from distinct clients are required.');
+  await Promise.all(clients.map(async client => {
+    if (await client.getChainId() !== config.chainId) throw new Error('RPC returned the wrong chain.');
+    const moduleCode = await client.getCode({ address: request.module });
+    if (!moduleCode || keccak256(moduleCode) !== MODULE_CODE_HASHES[request.module.toLowerCase()]) throw new Error('Recovery module code does not match the pinned contract.');
+    const walletCode = await client.getCode({ address: request.wallet });
+    if (!walletCode || walletCode === '0x') throw new Error('Wallet is not deployed.');
+    await assertRecoveryHash(client, request);
+    const nonce = await client.readContract({ address: request.module, abi: moduleAbi, functionName: 'nonce', args: [request.wallet] });
+    if (BigInt(nonce) !== request.nonce) throw new Error('Recovery request is stale. Generate a new request.');
+    const guardian = await client.readContract({ address: request.module, abi: moduleAbi, functionName: 'isGuardian', args: [request.wallet, signer as `0x${string}`] });
+    if (!guardian) throw new Error('These card words are not a guardian of this wallet.');
+  }));
+  return { request, signer, fingerprint: ownerFingerprint(request.newOwner) };
+}
+export async function approveRecovery(code: string, words: string, config: ToolConfig, expectedReview: RecoveryReview, clients = makeClients(config)): Promise<string> {
+  // Freshly repeat every chain check at the explicit confirmation boundary.
+  const review = await reviewRecovery(code, words, config, clients);
+  if (JSON.stringify(review, (_, value) => typeof value === 'bigint' ? value.toString() : value) !== JSON.stringify(expectedReview, (_, value) => typeof value === 'bigint' ? value.toString() : value)) throw new Error('Request changed. Review it again.');
+  const approval = await signRecovery(mnemonicToPrivateKey(normalizeWords(words)), review.request);
+  return encodeCode({ v: 1, kind: 'approval', chainId: config.chainId, ...approval });
+}
+export async function openEmergencyKit(text: string, code: string) {
+  const kit = parseJson(text);
+  if (kit.v !== 1 || ![CHAIN_ID, LOCAL_CHAIN_ID].includes(Number(kit.chainId))) throw new Error('Unsupported emergency kit version or chain.');
+  // Protocol validates KDF parameters, checksum, authenticated ciphertext and owner binding.
+  return openKit(kit as unknown as EmergencyKit, code.trim());
+}

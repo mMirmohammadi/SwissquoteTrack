@@ -1,0 +1,10 @@
+{
+  "name": "@sq/protocol",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "scripts": { "build": "tsc -p tsconfig.json", "typecheck": "tsc -p tsconfig.json --noEmit", "test": "node --import tsx --test test/*.test.ts" },
+  "dependencies": { "viem": "^2.38.0", "@scure/bip39": "^2.0.1", "@scure/bip32": "^2.0.1", "@scure/base": "^2.0.0" },
+  "devDependencies": { "typescript": "^5.9.3", "tsx": "^4.20.6", "@types/node": "^24.0.0" }
+}

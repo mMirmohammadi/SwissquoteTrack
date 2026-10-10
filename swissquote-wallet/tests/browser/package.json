@@ -1,0 +1,15 @@
+{
+  "name": "@sq/browser-verification",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test harness.test.mjs validation.test.mjs browser.test.mjs offline-kit.test.mjs",
+    "test:e2e": "BROWSER_REQUIRED=1 node --test browser.test.mjs offline-kit.test.mjs",
+    "preflight": "node preflight.mjs",
+    "build": "node --check harness.mjs && node --check browser.test.mjs",
+    "typecheck": "node --check harness.mjs && node --check browser.test.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0"
+  }
+}

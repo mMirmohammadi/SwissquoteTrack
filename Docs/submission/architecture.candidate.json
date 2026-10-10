@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {"title":"Swissquote Wallet — intended authority and MOCK boundaries","output":"Docs/submission/architecture.html","locale":"en","quality_profile":"showcase"},
+  "components": [
+    {"id":"tool","type":"frontend","label":"Recovery tool","sublabel":"Card and kit secrets stay here","tag":"Publisher independence: MOCK","pos":[40,160],"size":[220,86]},
+    {"id":"wallet","type":"frontend","label":"Wallet / owner key","sublabel":"Encrypted device seed; signs payments","tag":"App publisher remains trusted","pos":[470,160],"size":[240,86]},
+    {"id":"bank","type":"backend","label":"Swissquote service","sublabel":"Auth, relay, account, SQ guardian","tag":"Bank / KYC / HSM: MOCK","pos":[470,430],"size":[240,86]},
+    {"id":"partner","type":"backend","label":"Partner service","sublabel":"Separate guardian key and storage","tag":"Face / HSM: MOCK","pos":[40,430],"size":[220,86]},
+    {"id":"chain","type":"security","label":"Safe + recovery modules","sublabel":"Owner spend; card + helper recovery","tag":"Local pinned code; token MOCK","pos":[940,430],"size":[270,86]},
+    {"id":"rpc","type":"cloud","label":"Chain / RPC","sublabel":"Local 31337; no live proof here","tag":"Local aliases are one provider","pos":[940,160],"size":[270,86]}
+  ],
+  "connections": [
+    {"id":"approval-code","from":"tool","to":"wallet","label":"Copy card approval","variant":"security"},
+    {"id":"tool-read","from":"tool","to":"rpc","label":"Verify / kit exit via RPC","variant":"dashed","fromSide":"top","toSide":"top","via":[[150,60],[1075,60]]},
+    {"id":"wallet-read","from":"wallet","to":"rpc","label":"Read both recoveries","variant":"dashed"},
+    {"id":"owner-relay","from":"wallet","to":"bank","label":"Owner-signed request","variant":"emphasis"},
+    {"id":"helper-approval","from":"partner","to":"bank","label":"Partner approval","variant":"security"},
+    {"id":"relay-submit","from":"bank","to":"chain","label":"Funded submitter; contract gates","variant":"emphasis"},
+    {"id":"state","from":"rpc","to":"chain","label":"State and execution"}
+  ],
+  "cards": [
+    {"dot":"amber","title":"Design view, not runtime evidence","items":["No local story or Sepolia success is attested by this diagram.","Tool verifies chain rules through RPC; copy codes carry no secret words.","A saved kit plus separate code restores the current owner without services."]},
+    {"dot":"rose","title":"Authority limits","items":["A: card + partner, 180 seconds. B: card + Swissquote, 259200 seconds.","Helpers without the card are insufficient under verified intended rules.","Owner or decrypted kit can bypass relay policy using another funded submitter."]}
+  ]
+}

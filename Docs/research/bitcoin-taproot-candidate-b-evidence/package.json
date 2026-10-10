@@ -1,0 +1,13 @@
+{
+  "name": "candidate-b-bitcoin-regtest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Disposable regtest-only policy compilation and adversarial spend tests; never use these deterministic keys for funds.",
+  "scripts": { "test": "node verify.mjs" },
+  "dependencies": {
+    "@bitcoinerlab/miniscript": "2.0.0",
+    "@bitcoinerlab/miniscript-policies": "1.1.0",
+    "@scure/btc-signer": "2.4.1"
+  }
+}

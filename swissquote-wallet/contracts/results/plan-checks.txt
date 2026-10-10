@@ -1,0 +1,71 @@
+
+
+  Plan review: faithful local copy of the Sepolia contracts (checks 1-7)
+      fixture: Sepolia chainId 11155111, block 11885174, hardfork osaka
+      evidence: SafeL2 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762: 24421 bytes, keccak 0xb1f926978a0f44a2…, non-zero slots 0-8 {"4":"0x0000000000000000000000000000000000000000000000000000000000000001"}
+      evidence: SafeProxyFactory 0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67: 3054 bytes, keccak 0x50c3cdc4074750a7…, non-zero slots 0-8 {}
+      evidence: CompatibilityFallbackHandler 0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99: 5637 bytes, keccak 0x7c6007a5d711cea8…, non-zero slots 0-8 {}
+      evidence: MultiSendCallOnly 0x9641d764fc13c8B624c04430C7356C1C7C8102e2: 410 bytes, keccak 0xecd5bd14a08c5d21…, non-zero slots 0-8 {}
+      evidence: SafeModuleSetup 0x2dd68b007B46fBe91B9A7c3EDa5A7a1063cB5b47: 547 bytes, keccak 0xaf2d170bb766d277…, non-zero slots 0-8 {}
+      evidence: CandideRecovery3min 0x949d01d424bE050D09C16025dd007CB59b3A8c66: 13606 bytes, keccak 0x1a5e700fbb053368…, non-zero slots 0-8 {}
+      evidence: MultiSend 0x38869bf66a61cF6bDB996A6aE40D5853Fd43B526: 629 bytes, keccak 0x0e4f7fc66550a322…, non-zero slots 0-8 {}
+      evidence: SafeL2, factory, handler, MultiSendCallOnly, MultiSend code hashes == safe-deployments v1.4.1 canonical codeHash
+      evidence: singleton.setup by outsider (constructor slot 4 copied) -> GS200
+    ✔ C1: local code at each Sepolia address equals the fetched code; Safe hashes are canonical v1.4.1 (44ms)
+      evidence: predicted 0xECeE05EdC8169a6786378d064A492B83005D8452; ProxyCreation.proxy 0xECeE05EdC8169a6786378d064A492B83005D8452; createProxyWithNonce gasUsed 315124
+      evidence: getOwners ["0xf8DFD65a12284F2B9876b6542b111C42874Ef350"] threshold 1 modules ["0x851EE82CBb0a91144E131132548A458a7B4B4892","0x949d01d424bE050D09C16025dd007CB59b3A8c66"]
+      evidence: guard slot 0 (none); fallback slot -> 0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99
+      evidence: tampered initializer (extra owner) would deploy at 0xd67A26A68a149145896080AA0b80D2aADA18dca4 != 0xECeE05EdC8169a6786378d064A492B83005D8452
+    ✔ C2: creation exactly as §7.1 steps 6-7; CREATE2 prediction matches; A and B enabled
+      evidence: plan's literal 3-arg addGuardianWithThreshold(wallet, g, t) batch -> GS013 (selector 0x9b890b70 not in module code)
+      evidence: addGuardianWithThreshold(P, 2) as first guardian (eth_call from W) -> GS: threshold must be lower or equal to guardians count
+      evidence: same batch with operation 0 (CALL) -> GS013
+      evidence: correct batch (operation 1) succeeded, gasUsed 358389; events: A.GuardianAdded(0xbCeB7775c43820A4D94A2e2314387661a661cA62) A.ChangedThreshold(1) A.GuardianAdded(0x208CD65190437bcCB740Da0773e20A8Adecfc146) A.ChangedThreshold(2) B.GuardianAdded(0xbCeB7775c43820A4D94A2e2314387661a661cA62) B.ChangedThreshold(1) B.GuardianAdded(0x149bE7053E373c87305f2889162e49e324E2170A) B.ChangedThreshold(2)
+      evidence: A guardians ["0x208CD65190437bcCB740Da0773e20A8Adecfc146","0xbCeB7775c43820A4D94A2e2314387661a661cA62"] threshold 2; B guardians ["0x149bE7053E373c87305f2889162e49e324E2170A","0xbCeB7775c43820A4D94A2e2314387661a661cA62"] threshold 2
+    ✔ C3: guardian setup in ONE Safe tx via MultiSendCallOnly (operation 1); plan's 3-argument call fails (61ms)
+      evidence: local EIP-712 hash 0xb7bd6150c8b2e42420ba5adaa9845a150c3af7140b67c5b8053c524b788e8792 == module getRecoveryHash 0xb7bd6150c8b2e42420ba5adaa9845a150c3af7140b67c5b8053c524b788e8792 (chainId 31337, nonce 0)
+      evidence: Sepolia eth_call getRecoveryHash 0xae938c999b35386040c5e0b8aa985046603c34a489e4673a858250230d5b4cfe == local (chainId 11155111) 0xae938c999b35386040c5e0b8aa985046603c34a489e4673a858250230d5b4cfe
+      evidence: signature length 65 bytes (r,s,v; v=28)
+      evidence: descending signer order -> SM: duplicate signers/invalid ordering
+      evidence: R signs the hash with personal_sign (EIP-191 prefix) -> SM: Invalid guardian signature
+      evidence: relayer multiConfirmRecovery(execute=true) gasUsed 236863; getRecoveryRequest = {guardiansApprovalCount 2, newThreshold 1, executeAfter 1791643709 (= block time + 180 s), newOwners ["0x899E1228f36Ab7C6B6E890fDd202d104518f70D7"]}; nonce now 1
+      evidence: RecoveryExecuted topics[2] (indexed address[] newOwners) = 0xa2acea8766ee754f… = keccak of the list, not the list (keccak(abi.encode-in-place of [N]) = 0xa2acea8766ee754f…, equal: true); data has newThreshold 1, nonce 0, executeAfter 1791643709, approvals 2
+      evidence: finalizeRecovery right away -> SM: recovery period still pending
+      evidence: finalizeRecovery by an unrelated account after 180 s -> success, gasUsed 91114; owners ["0x899E1228f36Ab7C6B6E890fDd202d104518f70D7"]
+      evidence: transfer signed by the old owner -> GS026
+      evidence: old owner's Safe tx calling A.cancelRecovery() -> success; request {approvals 0, executeAfter 0}; nonce 1
+      evidence: finalizeRecovery after cancel -> SM: no ongoing recovery
+      evidence: replaying the same R+P signatures after cancel (nonce moved on) -> SM: Invalid guardian signature
+    ✔ C4: recovery with off-chain EIP-712 guardian signatures, relayed; finalize; old owner GS026; cancel (77ms)
+      evidence: runtime 13606 bytes; differing bytes 34, all inside [11180,11212) (wait) or the last 53 bytes (CBOR metadata): true
+      evidence: wait in code: A 180 s, B 300 s
+      evidence: module B deployment: initcode 13758 bytes (11819 non-zero), gasUsed 2975072 on hardfork osaka; EIP-7623 floor = 21000 + 10*(1939 + 4*11819) = 513150
+    ✔ C5: module B = Sepolia module A byte-for-byte except the 32-byte wait and the metadata hash; deploy gas
+      evidence: relayer changes one field -> to:GS026 value:GS026 data:GS026 operation:GS026 safeTxGas:GS026 baseGas:GS026 gasPrice:GS026 gasToken:GS026 refundReceiver:GS026 nonce+1:GS026
+      evidence: unchanged, submitted by relayer 0x77837048… -> success, gasUsed 66324; recipient +0.01 ETH; relayer paid gas, Safe paid 0 refund
+      evidence: replay of the same signed tx -> GS026
+    ✔ C6: relayer submits an owner-signed Safe tx (gasPrice 0, refundReceiver 0); any changed field -> GS026 (52ms)
+      evidence: personal_sign: owner signs SafeMessage{message: hashMessage(m)} = 0x4c0be57c472fca8f… ; W.isValidSignature(bytes32) -> 0x1626ba7e
+      evidence: eth_signTypedData_v4: W.isValidSignature(bytes32 typedDataHash) -> 0x1626ba7e
+      evidence: legacy isValidSignature(bytes data, bytes sig) with SafeMessage{message: data} -> 0x20c13b0b
+      evidence: owner's plain personal_sign signature checked via W.isValidSignature -> GS026; ecrecover gives 0xf8DFD65a… (owner EOA), never W
+    ✔ C7: EIP-1271 for personal_sign and eth_signTypedData_v4 via CompatibilityFallbackHandler
+      evidence: createProxyWithNonce with setup(to=MultiSend, delegatecall) gasUsed 590261; wallet 0x812C1Dca07FdD49b705d96D079d764834ABda1E2
+      evidence: guardians {R,P} 2-of-2 on A and {R,SQ} on B set at creation; a weak variant (A threshold 1) lands at 0xAe9cafE8560805FA32836c205AFC7df2660f806E != 0x812C1Dca07FdD49b705d96D079d764834ABda1E2
+      evidence: same with MultiSendCallOnly (cannot delegatecall SafeModuleSetup) -> revert without reason
+    ✔ Extra: one-transaction creation with guardians inside setup (MultiSend v1.4.1 delegatecall) commits guardians to the address
+      evidence: abstractionkit 0.4.3: 17 selectors used by SocialRecoveryModule -> confirmRecovery,multiConfirmRecovery,executeRecovery,finalizeRecovery,cancelRecovery,addGuardianWithThreshold,revokeGuardianWithThreshold,changeThreshold,getRecoveryHash,getRecoveryRequest,getRecoveryApprovals,hasGuardianApproved,isGuardian,guardiansCount,threshold,getGuardians,nonce
+      evidence: default module address 0x38275826E1933303E508433dD5f289315Da2541c (3 days); After3Minutes = 0x949d01d424bE050D09C16025dd007CB59b3A8c66
+      evidence: helper EIP-712 data hash == getRecoveryHash; helper-built multiConfirmRecovery (signers passed descending) -> success gasUsed 236863, executeAfter 1791643711
+    ✔ C8: abstractionkit SocialRecoveryModule helper matches v0.0.1 (selectors, EIP-712 data, signer sorting) end-to-end
+      evidence: attack on module A: P+SQ multiConfirmRecovery as eth_call -> SM: Signer not a guardian
+      evidence: attack on module B: P+SQ multiConfirmRecovery as eth_call -> SM: Signer not a guardian
+      evidence: relayer sends execute=false -> executeAfter 0; then any account calls executeRecovery -> executeAfter 1791643712 (flag not signed, but harmless)
+      evidence: owner's invalidateNonce() -> nonce 2, request executeAfter 1791643712 (still pending)
+      evidence: module A disabled, wait over: finalizeRecovery -> GS104; request executeAfter still 1791643712
+      evidence: module A re-enabled -> the old request finalizes: owners ["0x899E1228f36Ab7C6B6E890fDd202d104518f70D7"]
+    ✔ C9: §7.5 attack P+SQ via eth_call; execute=false is harmless; §7.4 T10 nonce bump / disableModule keep the request (76ms)
+
+
+  10 passing (872ms)
+

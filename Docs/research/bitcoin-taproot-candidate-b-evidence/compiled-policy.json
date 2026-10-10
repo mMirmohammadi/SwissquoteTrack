@@ -1,0 +1,45 @@
+{
+  "started": "2026-10-10T13:41:27.277Z",
+  "run": "/home/dev/Hackaton/SwissquoteTrack/AgentsLocal/4ccb895d/bitcoin-regtest/run-2I79Pm",
+  "network": "regtest",
+  "N": 6,
+  "policy": "and(pk(R),and(or(pk(P),pk(SQ)),older(6)))",
+  "sourceSha256": "55880042f9f054e559f06f3276d464551ffe53c3b08fa4c5320c3021c26d2c3b",
+  "nodeVersion": "v26.4.0",
+  "compiler": "@bitcoinerlab/miniscript-policies@1.1.0 (reference compiler + tapscript rewrite/validation shim)",
+  "analysis": "@bitcoinerlab/miniscript@2.0.0",
+  "signer": "@scure/btc-signer@2.4.1",
+  "symbolicMiniscript": "and_v(v:pk(R),and_v(or_c(pk(P),v:pk(SQ)),older(6)))",
+  "concreteMiniscript": "and_v(v:pk(de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa),and_v(or_c(pk(675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76),v:pk(741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07)),older(6)))",
+  "symbolicASM": "<R> OP_CHECKSIGVERIFY <P> OP_CHECKSIG OP_NOTIF <SQ> OP_CHECKSIGVERIFY OP_ENDIF 6 OP_CHECKSEQUENCEVERIFY",
+  "scriptHex": "20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b2",
+  "scriptBytes": 106,
+  "internalKey": "d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+  "publicKeys": {
+    "U": "d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+    "R": "de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa",
+    "P": "675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76",
+    "SQ": "741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07",
+    "NEW_U": "b530b2b5f8907e20961f4a9f62b23f68b0b94eadd968915e876d54156fd40ee5",
+    "DEST": "eeaf05ba1001e76f53638c4809843642e19724561f32f2716e3b8f1a1ca41212",
+    "ATTACKER": "3b31f7b57999ba759841127bdc16a30f26df6f1a9425eae3fe660987168a5c06"
+  },
+  "tapMerkleRoot": "8de40ef1d533eb419f585322fe92a2d2f93fc5788ff10ef7e090aa5a3c042f9c",
+  "controlBlockHex": "c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+  "address": "bcrt1p00anmjx8jefrd3jsurkct4hz90t547chp0rclyy26v744up77grqzyau2y",
+  "scriptPubKey": "51207bfb3dc8c7965236c650e0ed85d6e22bd74afb170bc78f908ad33d5af03ef206",
+  "recoveryAddress": "bcrt1pn4zmad3xqkfr0dhwxhvpae68ax2uf5sgqkz86fckdahnyt4rqmwsd5vl7y",
+  "descriptor": "tr(d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50,and_v(v:pk(de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa),and_v(or_c(pk(675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76),v:pk(741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07)),older(6))))",
+  "witnessTemplates": [
+    {
+      "asm": "<sig(P)> <sig(R)>",
+      "nSequence": 6
+    },
+    {
+      "asm": "<sig(SQ)> 0 <sig(R)>",
+      "nSequence": 6
+    }
+  ],
+  "checks": [],
+  "minedTransactions": []
+}
