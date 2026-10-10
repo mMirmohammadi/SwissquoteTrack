@@ -47,7 +47,9 @@ export const LOG_CHUNK_BLOCKS = 10_000n;
  * Sepolia RPCs that keep full eth_getLogs history: two independent operators for wallet verification.
  * publicnode drops logs older than about 10,000 blocks (~33 h), so it cannot verify older wallets.
  */
-export const HISTORY_RPC_URLS = ['https://sepolia.gateway.tenderly.co', 'https://rpc.sepolia.ethpandaops.io'] as const;
+export const HISTORY_RPC_URLS = ['https://rpc.sepolia.ethpandaops.io', 'https://sepolia.gateway.tenderly.co'] as const;
+/** Nodes supporting eth_simulateV1; keep separate from archive/history providers. */
+export const SIMULATION_RPC_URLS = ['https://ethereum-sepolia-rpc.publicnode.com', 'https://sepolia.drpc.org'] as const;
 /**
  * General Sepolia RPCs: publicnode first for sends, receipts and current reads; the history RPCs follow as fallbacks.
  * drpc was removed: its free tier refuses eth_getLogs ranges of more than about 100 blocks.

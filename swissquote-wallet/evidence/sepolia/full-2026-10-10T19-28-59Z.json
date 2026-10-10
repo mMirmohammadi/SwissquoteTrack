@@ -1,0 +1,319 @@
+{
+  "kind": "swissquote-wallet-sepolia-story",
+  "mode": "full",
+  "runId": "2026-10-10T19-28-59Z",
+  "chainId": 11155111,
+  "status": "success",
+  "startedAt": "2026-10-10T19:28:59.177Z",
+  "addresses": {
+    "treasury": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71",
+    "funder": "0xAD8495b9d43b4598d5946f4Bf0Ee2034fE845d44",
+    "owner": "0xbD96bBFB556aA55fD4D6b1f4827e40D9b7f0c1c5",
+    "cardGuardian": "0x0e8c68E2AE91dfD18793b44eb22348A3fa124e85",
+    "partnerGuardian": "0x2fB1695e881cf7C13eD6F7d76474aA985Dac1250",
+    "swissquoteGuardian": "0x6C70C35EcCD3426f4Adf9a0478716B4338F1427a",
+    "recoveryNewOwner": "0xc3B0939B53BC969d711dF98422eBEaF1a9bf4E67",
+    "rotationOwner": "0xf2FAcF4790755E0afA035419F5Df95e150Fd8D6E",
+    "moduleA": "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+    "moduleB": "0x38275826E1933303E508433dD5f289315Da2541c",
+    "usdc": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "factory": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67"
+  },
+  "steps": [
+    {
+      "name": "preflight",
+      "status": "success",
+      "blockNumber": "11886628",
+      "values": {
+        "chainId": 11155111,
+        "rpcUrls": [
+          "https://ethereum-sepolia-rpc.publicnode.com",
+          "https://rpc.sepolia.ethpandaops.io"
+        ],
+        "pinnedCodeHashes": "8/8 match",
+        "treasuryEth": "0.0169993861901792",
+        "treasuryUsdc": "20",
+        "funderEth": "0.003",
+        "maxFeeGwei": "0.010000032"
+      }
+    },
+    {
+      "name": "deploy-wallet",
+      "status": "success",
+      "txHash": "0xa98a4f5f8932987d76de852c969c80cf3461a12045b18dddee72995aef735b85",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xa98a4f5f8932987d76de852c969c80cf3461a12045b18dddee72995aef735b85",
+      "blockNumber": "11886629",
+      "gasUsed": "2650279",
+      "values": {
+        "wallet": "0xad9c2831beeF85Df126BE1f80a443d26e2122dA9",
+        "factory": "0x4e1DCf7AD4e460CfD30791CCC4F9c8a4f820ec67",
+        "singleton": "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"
+      }
+    },
+    {
+      "name": "verify-wallet",
+      "status": "success",
+      "values": {
+        "ok": true,
+        "fromBlock": "11886629",
+        "walletEth": "0"
+      }
+    },
+    {
+      "name": "ownership-proof-eip1271",
+      "status": "success",
+      "values": {
+        "clientId": "SEPOLIA-story",
+        "nonce": "sepolia-story-2026-10-10T19-28-59Z",
+        "messageHash": "0x552e598fa9a90825bce099135b51a2023189daa015666378606486094cf5b4f6",
+        "verified": true
+      }
+    },
+    {
+      "name": "fund-wallet-10-usdc",
+      "status": "success",
+      "txHash": "0x4641f17aafad10051cad0313fd37c4c70fddae35b0d74a4597a26da9becc551f",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x4641f17aafad10051cad0313fd37c4c70fddae35b0d74a4597a26da9becc551f",
+      "blockNumber": "11886630",
+      "gasUsed": "151779",
+      "values": {
+        "from": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71",
+        "amountUsdc": "10",
+        "walletUsdc": "10"
+      }
+    },
+    {
+      "name": "pay-1-usdc-small",
+      "status": "success",
+      "txHash": "0xd6c7a854c332c29d72e15f5c55f58bbf388d5dbb5a0f231e8293e972b3f0097f",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xd6c7a854c332c29d72e15f5c55f58bbf388d5dbb5a0f231e8293e972b3f0097f",
+      "blockNumber": "11886631",
+      "gasUsed": "199289",
+      "values": {
+        "amountUsdc": "1",
+        "class": "Small",
+        "requiresPasskey": false,
+        "recipient": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71"
+      }
+    },
+    {
+      "name": "pay-6-usdc-large",
+      "status": "success",
+      "txHash": "0xdada558819ace01b66d6d8e3dd69832a7d1c8e427335ac6caf4599d10f4cd8b7",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xdada558819ace01b66d6d8e3dd69832a7d1c8e427335ac6caf4599d10f4cd8b7",
+      "blockNumber": "11886632",
+      "gasUsed": "101369",
+      "values": {
+        "amountUsdc": "6",
+        "class": "Large",
+        "requiresPasskey": true,
+        "recipient": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71"
+      }
+    },
+    {
+      "name": "balances-after-payments",
+      "status": "success",
+      "values": {
+        "walletUsdc": "3",
+        "walletEth": "0",
+        "paidToTreasuryUsdc": "7",
+        "atBlock": "11886632"
+      }
+    },
+    {
+      "name": "start-recovery-a",
+      "status": "success",
+      "txHash": "0x28825cae3b8726a6a8abae0f7d066f9dc6b44517fdd8f6fc8163c56d5422c129",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x28825cae3b8726a6a8abae0f7d066f9dc6b44517fdd8f6fc8163c56d5422c129",
+      "blockNumber": "11886633",
+      "gasUsed": "934747",
+      "values": {
+        "module": "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+        "guardians": [
+          "card",
+          "partner"
+        ],
+        "executeAfter": "1791660768",
+        "delaySeconds": "180"
+      }
+    },
+    {
+      "name": "start-recovery-b",
+      "status": "success",
+      "txHash": "0x449520323de450ec87b7df2e7bff2443564f81c825e84e64f60e13d169494368",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x449520323de450ec87b7df2e7bff2443564f81c825e84e64f60e13d169494368",
+      "blockNumber": "11886634",
+      "gasUsed": "934735",
+      "values": {
+        "module": "0x38275826E1933303E508433dD5f289315Da2541c",
+        "guardians": [
+          "card",
+          "swissquote"
+        ],
+        "executeAfter": "1791919800",
+        "executeAfterUtc": "2026-10-13T19:30:00.000Z",
+        "delaySeconds": "259200"
+      }
+    },
+    {
+      "name": "cancel-both-recoveries",
+      "status": "success",
+      "txHash": "0x4bbdd6bd0b25a2981e7f7f6fa4dc2b9c9fe75b6b5252e543f930fe1838980681",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x4bbdd6bd0b25a2981e7f7f6fa4dc2b9c9fe75b6b5252e543f930fe1838980681",
+      "blockNumber": "11886635",
+      "gasUsed": "162274",
+      "values": {
+        "class": "Protective",
+        "modules": [
+          "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+          "0x38275826E1933303E508433dD5f289315Da2541c"
+        ],
+        "executeAfterA": "0",
+        "executeAfterB": "0"
+      }
+    },
+    {
+      "name": "no-card-refused-a",
+      "status": "success",
+      "values": {
+        "module": "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+        "signers": [
+          "partner",
+          "swissquote"
+        ],
+        "readOnly": true,
+        "refusedWith": "Signer not a guardian"
+      }
+    },
+    {
+      "name": "no-card-refused-b",
+      "status": "success",
+      "values": {
+        "module": "0x38275826E1933303E508433dD5f289315Da2541c",
+        "signers": [
+          "partner",
+          "swissquote"
+        ],
+        "readOnly": true,
+        "refusedWith": "Signer not a guardian"
+      }
+    },
+    {
+      "name": "start-recovery-a-again",
+      "status": "success",
+      "txHash": "0xea2e681240d605bab6e25f6e854e55eee54b2133bb368e0694110e1fdbf85c11",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xea2e681240d605bab6e25f6e854e55eee54b2133bb368e0694110e1fdbf85c11",
+      "blockNumber": "11886636",
+      "gasUsed": "836827",
+      "values": {
+        "module": "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+        "executeAfter": "1791660804",
+        "executeAfterUtc": "2026-10-10T19:33:24.000Z",
+        "delaySeconds": "180",
+        "finalizeAtStartBlock": "recovery period still pending"
+      }
+    },
+    {
+      "name": "wait-recovery-delay",
+      "status": "success",
+      "values": {
+        "executeAfter": "1791660804",
+        "maturedBlock": "11886651",
+        "maturedTimestamp": "1791660804",
+        "lastRefusedBlock": "11886650",
+        "lastRefusedTimestamp": "1791660792",
+        "refusedSecondsBeforeMaturity": "12"
+      }
+    },
+    {
+      "name": "finalize-recovery-a",
+      "status": "success",
+      "txHash": "0x1231c281bbb949ea3c64917618b4f626cc70a77a0621b7a2d763ae95de3c743e",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x1231c281bbb949ea3c64917618b4f626cc70a77a0621b7a2d763ae95de3c743e",
+      "blockNumber": "11886652",
+      "gasUsed": "197620",
+      "values": {
+        "module": "0x949d01d424bE050D09C16025dd007CB59b3A8c66",
+        "owners": [
+          "0xc3B0939B53BC969d711dF98422eBEaF1a9bf4E67"
+        ]
+      }
+    },
+    {
+      "name": "old-key-rejected-gs026",
+      "status": "success",
+      "values": {
+        "signer": "0xbD96bBFB556aA55fD4D6b1f4827e40D9b7f0c1c5",
+        "readOnly": true,
+        "refusedWith": "GS026"
+      }
+    },
+    {
+      "name": "stale-kit-refused",
+      "status": "success",
+      "values": {
+        "kitOwner": "0xbD96bBFB556aA55fD4D6b1f4827e40D9b7f0c1c5",
+        "readOnly": true,
+        "refusedWith": "no longer controls"
+      }
+    },
+    {
+      "name": "kit-encrypt-decrypt",
+      "status": "success",
+      "values": {
+        "kitOwner": "0xc3B0939B53BC969d711dF98422eBEaF1a9bf4E67",
+        "roundTrip": true,
+        "wrongCodeRejected": true
+      }
+    },
+    {
+      "name": "kit-sweep",
+      "status": "success",
+      "txHash": "0xbc661bfd7f78d65385f7f7bcb4bcc6231205312e6a3e510401b34b8268e9110c",
+      "etherscan": "https://sepolia.etherscan.io/tx/0xbc661bfd7f78d65385f7f7bcb4bcc6231205312e6a3e510401b34b8268e9110c",
+      "blockNumber": "11886653",
+      "gasUsed": "89765",
+      "values": {
+        "amountUsdc": "3",
+        "destination": "0xB2F61CfeA95A87017FcdF539A0556158ed1b6B71",
+        "gasPaidBy": "0xAD8495b9d43b4598d5946f4Bf0Ee2034fE845d44",
+        "services": "none (RPC only)",
+        "walletUsdcAfter": "0"
+      }
+    },
+    {
+      "name": "rotate-owner",
+      "status": "success",
+      "txHash": "0x15f4a894d33b0adae664035624927c9bc7ba5a4ce2a2c5b1a86932169540c62b",
+      "etherscan": "https://sepolia.etherscan.io/tx/0x15f4a894d33b0adae664035624927c9bc7ba5a4ce2a2c5b1a86932169540c62b",
+      "blockNumber": "11886654",
+      "gasUsed": "186268",
+      "values": {
+        "class": "Admin",
+        "owners": [
+          "0xf2FAcF4790755E0afA035419F5Df95e150Fd8D6E"
+        ]
+      }
+    },
+    {
+      "name": "previous-owner-rejected-gs026",
+      "status": "success",
+      "values": {
+        "signer": "0xc3B0939B53BC969d711dF98422eBEaF1a9bf4E67",
+        "readOnly": true,
+        "refusedWith": "GS026"
+      }
+    },
+    {
+      "name": "replacement-kit",
+      "status": "success",
+      "values": {
+        "kitOwner": "0xf2FAcF4790755E0afA035419F5Df95e150Fd8D6E"
+      }
+    }
+  ],
+  "wallet": "0xad9c2831beeF85Df126BE1f80a443d26e2122dA9",
+  "walletEtherscan": "https://sepolia.etherscan.io/address/0xad9c2831beeF85Df126BE1f80a443d26e2122dA9",
+  "deploymentBlock": "11886629",
+  "finishedAt": "2026-10-10T19:34:03.366Z"
+}

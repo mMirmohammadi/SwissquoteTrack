@@ -17,3 +17,11 @@ test('production adapter checks current owner EIP-712 signature, chain and simul
  currentChain=11155111;await assert.rejects(adapter.safeTxHash(wallet,wire),/RPC chain mismatch/);
 });
 test('Sepolia adapter refuses broadcast without explicit authorization',async()=> {const publicClient={getChainId:async()=>11155111} as unknown as PublicClient;const adapter=createViemChain({chainId:11155111,rpcUrls:['http://localhost:8545','http://127.0.0.1:8545'],relayerPrivateKey:generatePrivateKey(),publicClient});await assert.rejects(adapter.send({kind:'finalize',wallet,module:wallet},100n),/Sepolia writes disabled/);});
+test('receipt status checks chain/hash and never treats missing, malformed or unavailable receipt as settlement',async()=> {
+ const hash=('0x'+'ab'.repeat(32)) as `0x${string}`;let currentChain=11155111;let receipt:Record<string,unknown>={transactionHash:hash,status:'success',blockNumber:42n};let fail=false;
+ const publicClient={getChainId:async()=>currentChain,getTransactionReceipt:async()=>{if(fail)throw Error('not found');return receipt;}} as unknown as PublicClient;
+ const adapter=createViemChain({chainId:11155111,rpcUrls:['http://localhost:8545','http://127.0.0.1:8545'],relayerPrivateKey:generatePrivateKey(),publicClient});
+ assert.deepEqual(await adapter.receiptStatus!(hash),{status:'confirmed',blockNumber:'42'});receipt.status='reverted';assert.deepEqual(await adapter.receiptStatus!(hash),{status:'reverted',blockNumber:'42'});
+ for(const mutation of [{status:'pending'},{transactionHash:'0x00'},{blockNumber:null},{blockNumber:-1n}]) {receipt={transactionHash:hash,status:'success',blockNumber:42n,...mutation};assert.deepEqual(await adapter.receiptStatus!(hash),{status:'unknown'});}
+ fail=true;assert.deepEqual(await adapter.receiptStatus!(hash),{status:'unknown'});fail=false;currentChain=31337;assert.deepEqual(await adapter.receiptStatus!(hash),{status:'unknown'});
+});

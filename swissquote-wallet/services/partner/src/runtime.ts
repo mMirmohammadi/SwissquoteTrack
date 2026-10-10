@@ -47,7 +47,7 @@ export function createPartnerRuntime(options: PartnerRuntimeOptions = {}) {
   const client = options.client ?? createPublicClient({ transport: fallback(urls.map(url => http(url, { timeout: 8000, retryCount: 0 })), { rank: false, retryCount: 0 }) });
   const dataFile = options.dataFile ?? (env.PARTNER_DATA_DIR ? resolve(env.PARTNER_DATA_DIR, 'partner.sqlite') : fileURLToPath(new URL('../data/partner.sqlite', import.meta.url)));
   const store = new SqlitePartnerStore(dataFile);
-  const service = createPartnerService({ store, chainReader: createViemChainReader(client), crypto: partnerCrypto, chainId, moduleA: ADDRESSES.moduleA, allowDemoFooled: env.PARTNER_DEMO_FOOLED === 'true' });
+  const service = createPartnerService({ store, chainReader: createViemChainReader(client), crypto: partnerCrypto, chainId, moduleA: ADDRESSES.moduleA });
   const server = createPartnerServer({ service, allowedOrigins: env.PARTNER_ALLOWED_ORIGINS?.split(',').map(s => s.trim()).filter(Boolean) });
   return { server, service, store, chainId, close: () => { server.close(); store.close(); } };
 }

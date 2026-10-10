@@ -12,7 +12,7 @@ test('actual local service create → proof → fund → owner payment; admin ca
   const session = await call<SessionResponse>('/auth/password/register', {body:{email,password:'local-test-password-123'}}); const token=session.token;
   await call('/kyc/mock-verify',{token,body:{}});
   const sq = await call<GuardianEnrollResponse>('/guardian/enroll',{token,body:{}});
-  const partner = await call<GuardianEnrollResponse>('/enroll',{partner:true,body:{userRef:session.userRef,mockFace:'wallet-lane-test-face'}});
+  const partner = await call<GuardianEnrollResponse>('/enroll',{partner:true,body:{mockFace:'wallet-lane-test-face'}});
   // The test passes only a public card address to the wallet, never card words.
   const cardGuardian = privateKeyToAccount(generatePrivateKey()).address;
   const seed = generateOwnerSeed(); const owner = mnemonicToAddress(seed);

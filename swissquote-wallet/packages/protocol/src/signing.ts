@@ -44,15 +44,17 @@ export async function assertRecoveryHash(client: PublicClient, request: Recovery
 export function encodeRecoveryCall(request: RecoveryRequest, approvals: readonly GuardianApproval[]): Hex {
   return encodeFunctionData({ abi: moduleAbi, functionName: 'multiConfirmRecovery', args: [request.wallet, [request.newOwner], 1n, sortApprovals(approvals), true] });
 }
-export function ownershipProofText(clientId: string, wallet: Address, nonce: string): string {
+export function ownershipProofText(clientId: string, wallet: Address, nonce: string, chainId = CHAIN_ID): string {
   if (!clientId || !nonce || /[\r\n]/.test(clientId + nonce)) throw new Error('Invalid ownership proof identity/nonce');
-  return `Swissquote client ${clientId} controls wallet ${wallet} on Sepolia (chain 11155111). This does not authorise any transfer. Nonce ${nonce}.`;
+  if (!Number.isSafeInteger(chainId) || chainId <= 0) throw new Error('Invalid ownership proof chain');
+  const network = chainId === CHAIN_ID ? 'Sepolia' : chainId === 31337 ? 'Local Hardhat' : 'Ethereum-compatible network';
+  return `Swissquote client ${clientId} controls wallet ${wallet} on ${network} (chain ${chainId}). This does not authorise any transfer. Nonce ${nonce}.`;
 }
 export function safeMessageTypedData(wallet: Address, messageHash: Hex, chainId = CHAIN_ID) {
   return { domain: { chainId, verifyingContract: wallet }, types: { SafeMessage: [{ name: 'message', type: 'bytes' }] } as const, primaryType: 'SafeMessage' as const, message: { message: messageHash } };
 }
 export async function signOwnershipProof(privateKey: Hex, clientId: string, wallet: Address, nonce: string, chainId = CHAIN_ID): Promise<{ message: string; hash: Hex; signature: Hex }> {
-  const message = ownershipProofText(clientId, wallet, nonce);
+  const message = ownershipProofText(clientId, wallet, nonce, chainId);
   const hash = hashMessage(message);
   const signature = await privateKeyToAccount(privateKey).signTypedData(safeMessageTypedData(wallet, hash, chainId));
   return { message, hash, signature };

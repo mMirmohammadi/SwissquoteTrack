@@ -1,30 +1,30 @@
-# Architecture: intended authority, not a deployment attestation
+# Architecture v3 — unchanged custody core, stricter sponsorship
 
-[Open the architecture diagram](<architecture.html>). It depicts the intended design with MOCK labels. The concurrent implementation is uncommitted and changing, so the diagram is deliberately not presented as a commit-pinned code snapshot. Source-visible relationships below are pointers for integration review, not execution evidence.
+**Owner signatures authorize spending; the relay only submits/pays; the card plus one helper authorizes delayed owner replacement.** The [existing interactive diagram](<architecture.html>) is a v2-era custody/design view, not a current v3 deployment attestation. Its sidecar receipts attest only to artifact checks; the old browser check was skipped. Until updated and checked, use the v3 component map below for sponsorship/screening boundaries.
 
-## Main path and authority
+## Component and data-flow map
 
-The recovery tool handles card words and, when opening a kit, the decrypted owner seed. Copy-paste approval/setup codes connect it to the wallet without sending secret words. The wallet signs a Safe transaction locally; the Swissquote service sponsors its submission. The partner supplies a separate recovery approval, not an owner payment signature. The contract checks the required signer set, nonce and recovery delay; Swissquote paying gas is not bank co-signing.
-
-The wallet/tool read chain state via RPC. The kit restores the **current** owner, who can sign and use an independently funded submitter without the wallet/bank/partner services. This is not offline settlement. Monitor and cancel both recovery modules. A later pending module can otherwise replace the new owner again.
-
-## Source evidence map
-
-| Component / relation | Source-visible evidence | Boundary |
+| Component | Talks to / purpose | Real versus MOCK / evidence |
 | --- | --- | --- |
-| Four processes plus optional local chain | [Supervisor](<../../swissquote-wallet/dev.mjs#L10-L16>) | Separate process names do not prove independent publishers |
-| Local contract placement / token fixture | [Devnet](<../../swissquote-wallet/scripts/devnet.ts#L13-L28>) | Pinned runtime on local chain; MOCK mintable token |
-| Owner signatures / funded submitter | [Story](<../../swissquote-wallet/scripts/story.ts#L41-L50>) | Script bypasses service passkey enforcement |
-| Recovery approvals and delay checks | [Story](<../../swissquote-wallet/scripts/story.ts#L51-L82>) | Source asserts checks; this lane did not execute them |
-| RPC-only kit exit | [Sweep](<../../swissquote-wallet/scripts/kit-sweep.ts#L7-L26>) | Needs current owner, matching chain and gas-funded submitter |
-| Swissquote runtime adapter / configuration | [Startup](<../../swissquote-wallet/services/swissquote/src/main.ts#L5-L11>) | MOCK opt-in; no adapter without relayer key |
-| Partner key isolation and signing | [Partner implementation record](<../../swissquote-wallet/services/partner/IMPLEMENTATION.md#L19-L45>) | Reported lane checks, not this lane's runtime test; MOCK HSM / face |
-| Tool portable bundle | [Inliner](<../../swissquote-wallet/apps/recovery-tool/scripts/inline.mjs#L4-L21>) | Intended self-contained HTML; saved-file behavior still needs browser testing |
+| Wallet browser | Swissquote login/ownership proof/sponsor requests; partner recovery checks; RPC contract state | Owner key generated/encrypted locally; passkey authorizes service step-up, not on-chain co-ownership. [Historical evidence](<../plans/v3/implementation-status.md#L49-L54>) |
+| Independent recovery tool | Copy-paste public request/setup codes; card approval; kit opening; optional RPC check | Real signing/encryption implementation; trusted independent distribution, reproducibility and saved-file operation require [C9 evidence](<claims.md>). Never send secret words via link/API |
+| Swissquote service | Client session/proof, fee sponsorship, screening/simulation; module-B guardian approval | Bank balance/KYC/mailbox/SECO client check and HSM are MOCK. It must never possess the owner seed, card words or kit code |
+| Separate partner process/storage | Partner face verification and module-A guardian approval | MOCK face/HSM; helper private key stays at service. `userRef` removal is pending [C10 proof](<claims.md>), not anonymity |
+| Screening sources and dApp registry | Swissquote checks addresses, code/proxy pins and freshness; returns reasons/preview | Planned real on-chain/vendor reads plus labelled MOCK list/SECO; execution/coverage requires [C6–C7 evidence](<claims.md>) |
+| Public RPC providers | State/history, simulation, broadcast/receipts | Reads/simulations are not mined results; providers see client addresses, can lag/lie and are not bank-internal infrastructure |
+| Safe 1.4.1 | Checks owner's Safe signature, executes approved calls, exposes EIP-1271 proof | Established contract dependency; initial threshold 1. [Initializer](<../../swissquote-wallet/packages/protocol/src/wallet.ts#L37-L44>) |
+| Candide v0.0.1 module A | Card + partner; 180 s demo delay | Existing module instance; [constants](<../../swissquote-wallet/packages/protocol/src/constants.ts#L18-L19>) |
+| Candide v0.0.1 module B | Card + Swissquote; 259,200 s delay | Existing module instance; full three-day public completion unconfirmed |
+| Token/DeFi contracts | Wallet transfers, swap or supply/withdraw batch | Local DemoUSDC is MOCK; Sepolia uses test tokens. Third-party Compound market provenance unresolved; not production money |
 
-## Artifact checks
+The wallet obtains a server challenge for authentication/ownership proof, signs locally and sends only the signature/public context. For a sponsored spend the user signs the Safe transaction; Swissquote checks policy, simulation and step-up, then its relayer pays for submission. These checks control **fee eligibility**, not owner authority: an independently funded sender can submit a valid owner signature outside the service.
 
-Archify showcase schema/layout validation, generation, and strict artifact check passed. The overall finalize command exited 2 because its browser gate was skipped: `viewer/chrome-unavailable` — “Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.” No browser evidence or perceptual visual review is claimed. See [summary receipt](<architecture.finalize-summary.json>) and [browser-check receipt](<architecture.browser-check.json>).
+The intended browser recovery creates a replacement key on the new device; the trusted tool signs the full new-owner address with the card, and the chosen helper signs after its check. The [recorded Sepolia script](<claims.md>) instead generates/signs its own guardian keys and bypasses those services/browser steps. It proves card+helper starts on A and B, mined cancellation of both, and A finalization after the real 180-second delay at the same wallet. Helpers-together/no-card, early finalize and old-key GS026 are read-only checks. B was cancelled, not completed. The recovered kit swept 3 USDC with RPC only and FUNDER-paid gas, then an owner rotation mined and a replacement kit was created. This proves no helper-service dependency for that scripted USDC exit, not an actual service-shutdown drill, saved-file browser operation, all-token support or offline settlement.
 
-## Real versus MOCK
+The record does not attest that the planned strict-sponsorship or browser controls work. [Current L13 routing](<../plans/v3/lane-routing.md#L29-L36>) reports signing-enabled fooled and uncertain-send queue regressions being fixed; full-gate and safety completion are not asserted.
 
-The signing/encryption/RPC/contract-code machinery is implementation code, not simulated cryptography; its complete runtime behavior remains unverified by this lane. Swissquote account/KYC/mailbox, partner face verification, guardian HSM protection, sanctions/dApp lists, CHF rates and independent tool publisher are MOCK. Local DemoUSDC is MOCK. Sepolia is a configured target, not a completed deployment. Bitcoin/Solana are roadmap scope, not part of this runtime diagram.
+## What changed in v3
+
+Custody contracts/template remain unchanged; no guarded-wallet prototype, new custody Solidity, MPC or passkey-owner migration is in scope. Off-chain targets are strict fee sponsorship, effects preview/recheck, source-labelled screening, protective-cancel exemption, recovery UI/alerts, trust checks, partner privacy and tool fingerprinting. [Build plan](<../plans/v3/build-plan.md#L456-L502>) is intent; [claims](<claims.md>) is actual evidence status.
+
+An audit of Safe/Candide dependencies does not audit our composition. Safe's [Candide repository](https://github.com/5afe/CandideWalletContracts) lists an Ackee audit of v0.0.1; deployed bytecode has not been matched to that audited commit here. Bitcoin regtest research and Solana design are outside this runtime. Recovery on another EVM network is separate even if CREATE2 reproduces an address.

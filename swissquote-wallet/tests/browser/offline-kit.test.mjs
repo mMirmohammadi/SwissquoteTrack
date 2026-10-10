@@ -46,6 +46,16 @@ test('portable HTML opens a real protocol kit offline and rejects the wrong code
     await page.locator('#open-kit').click();
     await page.locator('#status[data-state="error"]').waitFor();
     assert.equal(await page.locator('#kit-result').isVisible(), false);
+    assert.equal(await page.locator('#seed').innerText(), '');
+    // An otherwise decryptable envelope must not lie about its owner.
+    const altered = { ...kit, owner: '0x2222222222222222222222222222222222222222' };
+    await page.locator('#kit-file').setInputFiles({ name: 'tampered-kit.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(altered)) });
+    await page.locator('#kit-code').fill(code);
+    await page.locator('#open-kit').click();
+    await page.locator('#status[data-state="error"]').waitFor();
+    assert.equal(await page.locator('#kit-result').isVisible(), false);
+    assert.equal(await page.locator('#seed').innerText(), '');
+    await page.locator('#kit-file').setInputFiles({ name: 'browser-kit.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(kit)) });
     await page.locator('#kit-code').fill(code);
     await page.locator('#open-kit').click();
     await page.locator('#kit-result').waitFor();

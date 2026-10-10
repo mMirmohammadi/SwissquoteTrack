@@ -1,5 +1,6 @@
-export const SQ_URL = import.meta.env?.VITE_SQ_URL || 'http://localhost:4001';
-export const PARTNER_URL = import.meta.env?.VITE_PARTNER_URL || 'http://localhost:4002';
+// v3 local defaults must never attach Node integration tests to the running v2 services.
+export const SQ_URL = import.meta.env?.VITE_SQ_URL || 'http://localhost:4101';
+export const PARTNER_URL = import.meta.env?.VITE_PARTNER_URL || 'http://localhost:4102';
 export class ServiceError extends Error { constructor(message: string, public status: number) { super(message); this.name = 'ServiceError'; } }
 export async function call<T>(path: string, options: { body?: unknown; token?: string; partner?: boolean; method?: string } = {}): Promise<T> {
   const controller = new AbortController(); const timeout = setTimeout(() => controller.abort(), 30000);

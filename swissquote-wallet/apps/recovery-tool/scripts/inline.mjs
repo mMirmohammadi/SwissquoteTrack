@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve, relative } from 'node:path';
-const dist = resolve('dist');
+const dist = resolve(process.argv[2] ?? 'dist');
 let html = await readFile(resolve(dist, 'index.html'), 'utf8');
 async function asset(url) {
   const path = resolve(dist, url.replace(/^\.\//, ''));

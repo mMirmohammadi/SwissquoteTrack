@@ -22,5 +22,7 @@ test('local RPC configuration rejects remote servers, credentials, duplicate URL
   for (const urls of ['http://attacker.invalid,http://localhost:8545','http://u:p@localhost:8545,http://127.0.0.1:8545','http://localhost:8545,http://localhost:8545','https://localhost:8545,http://127.0.0.1:8545']) assert.throws(() => pinnedRpcUrls(31337, urls, []));
   assert.throws(() => pinnedRpcUrls(1, undefined, []));
   assert.equal(pinnedRpcUrls(31337, undefined, []).length, 2);
+  assert.deepEqual(pinnedRpcUrls(31337, 'http://127.0.0.1:8645,http://localhost:8645', []), ['http://127.0.0.1:8645','http://localhost:8645']);
+  for (const urls of ['http://localhost:9999,http://127.0.0.1:8645', 'http://localhost:8645/path,http://127.0.0.1:8645', 'http://localhost:8645/?secret=1,http://127.0.0.1:8645']) assert.throws(() => pinnedRpcUrls(31337, urls, []));
   assert(sameAddress('0xABc', '0xabc'));
 });

@@ -9,6 +9,10 @@ export interface DeviceRecord {
   createdAt: string;
   setupCode?: string;
   cardGuardian?: Address;
+  kitSavedAt?: string;
+  independentCheckedAt?: string;
+  passkeyRegisteredAt?: string;
+  pastRecipients?: Address[];
 }
 const DB = 'sq-wallet-device-v1';
 const STORE = 'keys';
@@ -35,6 +39,13 @@ export async function saveDevice(id: string, mnemonic: string, passphrase: strin
   const record: DeviceRecord = { id, owner, wallet, envelope: await encryptSeed(mnemonic, passphrase), createdAt: new Date().toISOString() };
   await request('readwrite', store => store.put(record));
   return record;
+}
+export async function updateDeviceEvidence(id: string, patch: Pick<Partial<DeviceRecord>, 'kitSavedAt' | 'independentCheckedAt' | 'passkeyRegisteredAt' | 'pastRecipients'>): Promise<DeviceRecord> {
+  const record = await loadDevice(id);
+  if (!record) throw new Error('No encrypted device record is available.');
+  const next = { ...record, ...patch };
+  await request('readwrite', store => store.put(next));
+  return next;
 }
 export async function loadDevice(id: string): Promise<DeviceRecord | undefined> { return request('readonly', store => store.get(id)); }
 export async function bindWallet(record: DeviceRecord, wallet: Address, setupCode?: string, cardGuardian?: Address): Promise<DeviceRecord> {

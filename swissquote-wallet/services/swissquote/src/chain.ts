@@ -2,17 +2,28 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { createPublicClient, createWalletClient, fallback, http, defineChain, encodeFunctionData, decodeFunctionResult, hashMessage, recoverTypedDataAddress, formatGwei, type PublicClient, type WalletClient, type Hex } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import { createNonceManager, jsonRpc } from 'viem/nonce';
-import { ADDRESSES, factoryAbi, safeAbi, moduleAbi, erc20Abi, buildDeployCall, computeWalletAddress, hashSafeTx, safeTxTypedData, encodeExecTransaction, encodeRecoveryCall, assertRecoveryHash, signRecovery, verifyOwnershipProof, verifyWallet, safeTxFromWire, type WalletSetup, type RecoveryRequest } from '@sq/protocol';
-import type { ChainAdapter, ChainOperation, Setup, Recovery } from './types.ts';
+import { ADDRESSES, HISTORY_RPC_URLS, factoryAbi, safeAbi, moduleAbi, erc20Abi, buildDeployCall, computeWalletAddress, hashSafeTx, classifyTransaction, safeTxTypedData, encodeExecTransaction, encodeRecoveryCall, assertRecoveryHash, signRecovery, verifyOwnershipProof, verifyWallet, safeTxFromWire, type WalletSetup, type RecoveryRequest } from '@sq/protocol';
+import { ChainPrebroadcastError, type ChainAdapter, type ChainOperation, type Setup, type Recovery } from './types.ts';
 import { ApiError, requireThat } from './policy.ts';
 export interface ViemChainOptions { chainId:number; rpcUrls:readonly string[]; relayerPrivateKey:Hex; accountPrivateKey?:Hex; allowSepoliaWrites?:boolean; publicClient?:PublicClient; walletClient?:WalletClient; simulationRetryDelayMs?:number }
 export const SEPOLIA_MIN_TIP=10_000_000n; // 0.01 gwei priority-fee floor
 export const SEPOLIA_MAX_FEE_CAP=20_000_000_000n; // 20 gwei: refuse to send rather than drain the relayer
+export const SEPOLIA_CANCEL_MAX_FEE_CAP=100_000_000_000n; // owner-signed protective cancels only
+export function isProtectiveCancel(operation:ChainOperation):boolean {
+  if(operation.kind!=='safe-tx') return false;
+  try {
+    const tx=safeTxFromWire({...operation.tx,operation:operation.tx.operation as 0|1});
+    const classification=classifyTransaction(operation.wallet,tx);
+    return classification.class==='Protective'&&classification.relayAllowed;
+  } catch {return false;}
+}
 export const SIMULATION_RETRY_DELAY_MS=3000; // a load-balanced Sepolia RPC node can lag one block
 /** Sepolia fee rule: tip = max(node suggestion, 0.01 gwei); max fee = 2 × base fee + tip; refuse above 20 gwei. */
-export function sepoliaFees(baseFeePerGas:bigint,suggestedTip:bigint) {
+export function sepoliaFees(baseFeePerGas:bigint,suggestedTip:bigint,protectiveCancel=false) {
+   requireThat(baseFeePerGas>=0n&&suggestedTip>=0n,'Invalid Sepolia fee quote',503);
+   const cap=protectiveCancel?SEPOLIA_CANCEL_MAX_FEE_CAP:SEPOLIA_MAX_FEE_CAP;
   const maxPriorityFeePerGas=suggestedTip>SEPOLIA_MIN_TIP?suggestedTip:SEPOLIA_MIN_TIP;const maxFeePerGas=2n*baseFeePerGas+maxPriorityFeePerGas;
-  if(maxFeePerGas>SEPOLIA_MAX_FEE_CAP) throw new ApiError(503,`Sepolia network fee too high: max fee ${formatGwei(maxFeePerGas)} gwei is above the ${formatGwei(SEPOLIA_MAX_FEE_CAP)} gwei safety cap; nothing was sent`);
+  if(maxFeePerGas>cap) throw new ApiError(503,`Sepolia network fee too high: max fee ${formatGwei(maxFeePerGas)} gwei is above the ${formatGwei(cap)} gwei safety cap; nothing was sent`);
   return {maxFeePerGas,maxPriorityFeePerGas};
 }
 export function createViemChain(options:ViemChainOptions):ChainAdapter {
@@ -21,12 +32,13 @@ export function createViemChain(options:ViemChainOptions):ChainAdapter {
   const transport=fallback(options.rpcUrls.map(url=>http(url)));const publicClient=options.publicClient??createPublicClient({chain:network,transport});
   // Sepolia only: one in-process nonce manager for RELAYER and SQ_ACCOUNT, so a lagging RPC node cannot hand out a used nonce.
   const sepolia=options.chainId===11155111;const nonceManager=sepolia?createNonceManager({source:jsonRpc()}):undefined;
+  const historyClient=sepolia&&!options.publicClient?createPublicClient({chain:network,transport:fallback(HISTORY_RPC_URLS.map(url=>http(url,{timeout:12000,retryCount:1})))}):publicClient;
   const relayer=privateKeyToAccount(options.relayerPrivateKey,{nonceManager});const account=options.accountPrivateKey?privateKeyToAccount(options.accountPrivateKey,{nonceManager}):undefined;
   const walletClient:WalletClient=options.walletClient??createWalletClient({chain:network,transport});
-  const quoteFees=async()=> {
+  const quoteFees=async(operation:ChainOperation)=> {
     const [block,tip]=await Promise.all([publicClient.getBlock({blockTag:'latest'}),publicClient.estimateMaxPriorityFeePerGas().catch(()=>0n)]);
     requireThat(typeof block.baseFeePerGas==='bigint','Sepolia base fee unavailable; nothing was sent',503);
-    try {return sepoliaFees(block.baseFeePerGas,tip);} catch(error) {console.warn(`[swissquote] ${(error as Error).message}`);throw error;}
+    try {return sepoliaFees(block.baseFeePerGas,tip,isProtectiveCancel(operation));} catch(error) {console.warn(`[swissquote] ${(error as Error).message}`);throw error;}
   };
   const setup=(input:Setup):WalletSetup=>({...input,saltNonce:BigInt(input.saltNonce),chainId:options.chainId});
   const recovery=(input:Recovery):RecoveryRequest=>({...input,nonce:BigInt(input.nonce),chainId:options.chainId});
@@ -49,7 +61,7 @@ export function createViemChain(options:ViemChainOptions):ChainAdapter {
   return {
     chainId:options.chainId,
     async computeWallet(input) {await verifyChain();const code=await publicClient.readContract({address:ADDRESSES.factory,abi:factoryAbi,functionName:'proxyCreationCode'});return computeWalletAddress(setup(input),code);},
-    async verifyWallet(input,verificationOptions) {await verifyChain();const result=await verifyWallet(publicClient,setup(input),{...verificationOptions,expectedWallet:input.wallet});return result.ok;},
+    async verifyWallet(input,verificationOptions) {await verifyChain();const result=await verifyWallet(historyClient,setup(input),{...verificationOptions,expectedWallet:input.wallet});return result.ok;},
     async verifyOwnership(wallet,message,signature) {await verifyChain();return verifyOwnershipProof(publicClient,wallet,hashMessage(message),signature);},
     async safeTxHash(wallet,tx) {await verifyChain();return hashSafeTx(wallet,safeTxFromWire({...tx,operation:tx.operation as 0|1}),options.chainId);},
     async verifyOwnerSignature(wallet,tx,signature) {
@@ -72,10 +84,28 @@ export function createViemChain(options:ViemChainOptions):ChainAdapter {
       }
     },
     // Sepolia: the fee cap is checked in preflight too, so a refusal is reported as "nothing broadcast".
-    async estimateGas(operation) {await verifyChain();if(sepolia) await quoteFees();return publicClient.estimateGas(await call(operation));},
-    async send(operation,gas) {await verifyChain();if(sepolia&&!options.allowSepoliaWrites) throw new ApiError(403,'Sepolia writes disabled; explicit authorization required');const tx=await call(operation);
+    async estimateGas(operation) {await verifyChain();if(sepolia) await quoteFees(operation);return publicClient.estimateGas(await call(operation));},
+    async receiptStatus(hash) {
+      try {
+        await verifyChain();const receipt=await publicClient.getTransactionReceipt({hash});
+        if(receipt.transactionHash.toLowerCase()!==hash.toLowerCase()||typeof receipt.blockNumber!=='bigint'||receipt.blockNumber<0n||(receipt.status!=='success'&&receipt.status!=='reverted')) return {status:'unknown'};
+        return {status:receipt.status==='success'?'confirmed':'reverted',blockNumber:receipt.blockNumber.toString()};
+      } catch { // Not-found, transport failures and inconsistent nodes all leave the sender closed.
+        return {status:'unknown'};
+      }
+    },
+    async send(operation,gas) {
+      let tx:Awaited<ReturnType<typeof call>>;let fees:Awaited<ReturnType<typeof quoteFees>>|undefined;
+      try {
+        await verifyChain();if(sepolia&&!options.allowSepoliaWrites) throw new ApiError(403,'Sepolia writes disabled; explicit authorization required');
+        tx=await call(operation);if(sepolia) fees=await quoteFees(operation);
+      } catch(error) {
+        // The wallet send action has not been invoked: explicit proof this failure is pre-broadcast.
+        throw new ChainPrebroadcastError(error instanceof ApiError?error.message:'Chain send preparation failed; nothing broadcast',error instanceof ApiError?error.status:503);
+      }
       if(!sepolia) return walletClient.sendTransaction({...tx,chain:network,gas});
-      // chainId + gas + both fees + managed nonce: viem skips eth_fillTransaction, so no node can alter the capped fees.
-      return walletClient.sendTransaction({...tx,chain:network,chainId:network.id,gas,...await quoteFees()});},
+      // Never interpret a sendTransaction throw as proof of non-broadcast (viem may reset its nonce manager).
+      return walletClient.sendTransaction({...tx,chain:network,chainId:network.id,gas,...fees});
+    },
   };
 }

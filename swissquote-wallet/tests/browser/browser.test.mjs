@@ -4,7 +4,7 @@ import { readFile, access } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import {
   browserAvailability, probeUrl, toolHtml, walletUrl, toolUrl,
-  persistenceSnapshot, containsSecret, virtualAuthenticator,
+  persistenceSnapshot, containsSecret, virtualAuthenticator, restrictBrowserNetwork,
 } from './harness.mjs';
 
 const availability = await browserAvailability();
@@ -22,12 +22,7 @@ async function browserTask(run) {
   const browser = await availability.playwright.chromium.launch({ executablePath: availability.executable, headless: true });
   try {
     const context = await browser.newContext({ acceptDownloads: true });
-    await context.route('**/*', async route => {
-      const url = new URL(route.request().url());
-      if (['http:', 'https:'].includes(url.protocol) && !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)) {
-        await route.abort('blockedbyclient');
-      } else await route.continue();
-    });
+    await restrictBrowserNetwork(context);
     await run(context, await context.newPage());
   } finally { await browser.close(); }
 }
@@ -126,7 +121,8 @@ test('recovery UI rejects malformed setup and request before RPC or approval', a
       const posts = [];
       const listener = request => { if (request.method() === 'POST') posts.push(request.url()); };
       page.on('request', listener);
-      await page.locator(`[data-tab="${flow === 'setup' ? 'check' : 'approve'}"]`).click();
+      // Card/setup verification is separate from the public wallet-rules check.
+      await page.locator(`[data-tab="${flow === 'setup' ? 'verify' : 'approve'}"]`).click();
       await page.locator(flow === 'setup' ? '#setup' : '#request').fill('invalid!not-a-code');
       await page.locator(flow === 'setup' ? '#check-words' : '#approve-words').fill(mnemonic);
       await page.locator(flow === 'setup' ? '#check-button' : '#review-button').click();

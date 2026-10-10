@@ -1,22 +1,49 @@
-// Sepolia demo launcher. REAL Sepolia testnet transactions: network fees are paid by the RELAYER key,
-// MOCK account transfers by the SQ_ACCOUNT key, both read from .env.sepolia at runtime. Values are never printed.
-// Identity checks, the bank account and guardian storage stay MOCKS. Mirrors local-demo.mjs.
+// Explicit launcher only: importing configuration helpers never reads keys or starts processes.
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseEnv } from 'node:util';
+import { randomUUID } from 'node:crypto';
+
 const cwd = path.dirname(fileURLToPath(import.meta.url));
-function refuse(message) { console.error(`Sepolia demo not started: ${message}`); process.exit(1); }
-
-// 0. A fooled partner would sign real recovery approvals with its Sepolia guardian key; anyone holding the card
-// could reuse such a signature to take over or lock a real wallet. Show tricked guardians only on throwaway
-// wallets (scripts/story-sepolia.ts), never through the services.
-if (process.env.PARTNER_DEMO_FOOLED === 'true') refuse('PARTNER_DEMO_FOOLED=true is not allowed on Sepolia. Unset it; the tricked-guardian demo runs on a throwaway wallet in scripts/story-sepolia.ts.');
-
-// 1. Refuse to start while anything (for example the local demo) already serves one of our ports.
-const ports = [[5173, 'wallet'], [5174, 'recovery tool'], [4001, 'Swissquote service'], [4002, 'partner service']];
+export const SEPOLIA_PORTS = [[5273, 'wallet'], [5274, 'recovery tool'], [4101, 'Swissquote service'], [4102, 'partner service']];
+export function assertSafeSepoliaEnv(env) {
+  if (env.PARTNER_DEMO_FOOLED?.trim().toLowerCase() === 'true') {
+    throw new Error('PARTNER_DEMO_FOOLED=true is not allowed on Sepolia; use a throwaway-wallet replay instead.');
+  }
+}
+export function sepoliaLaunchConfig(inherited = {}, root = cwd, runId = randomUUID()) {
+  assertSafeSepoliaEnv(inherited);
+  if (!/^[a-zA-Z0-9_-]+$/.test(runId)) throw new Error('Invalid Sepolia run ID');
+  const dataDir = path.join(root, '.sepolia-runs', runId);
+  const flags = new Set((inherited.SQ_FEATURES ?? '').split(',').map(value => value.trim()).filter(Boolean));
+  flags.add('strictSponsorship');
+  const env = {
+    ...inherited,
+    CHAIN: 'sepolia', ALLOW_SEPOLIA_WRITES: 'true',
+    RPC_URLS: 'https://ethereum-sepolia-rpc.publicnode.com,https://rpc.sepolia.ethpandaops.io,https://sepolia.gateway.tenderly.co',
+    SQ_DATA_DIR: path.join(dataDir, 'swissquote'), PARTNER_DATA_DIR: path.join(dataDir, 'partner'),
+    SQ_FEATURES: [...flags].join(','), ENABLE_MOCK: 'true', PARTNER_DEMO_FOOLED: 'false',
+    WEBAUTHN_RP_ID: 'localhost', WEBAUTHN_ORIGINS: 'http://localhost:5273',
+    PARTNER_ALLOWED_ORIGINS: 'http://localhost:5273',
+    VITE_CHAIN: 'sepolia',
+    VITE_FEATURES: 'recoveryWizard,dapps,audit,protection,payPreview,strictSponsorship,partnerPrivacy',
+    VITE_RPC_URLS: 'https://ethereum-sepolia-rpc.publicnode.com,https://rpc.sepolia.ethpandaops.io',
+    VITE_SQ_URL: 'http://localhost:4101', VITE_PARTNER_URL: 'http://localhost:4102',
+    PORT: '4101', SQ_PORT: '4101', PARTNER_PORT: '4102', PARTNER_HOST: '127.0.0.1',
+  };
+  // Only the two sending keys explicitly loaded below may reach the children.
+  for (const key of Object.keys(env)) if (key.endsWith('_PRIVATE_KEY')) delete env[key];
+  const commands = [
+    ['Swissquote', ['--filter', '@sq/swissquote', 'dev']],
+    ['Partner', ['--filter', '@sq/partner', 'dev']],
+    ['Wallet', ['--filter', '@sq/wallet', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5273', '--strictPort']],
+    ['Recovery tool', ['--filter', '@sq/recovery-tool', 'exec', 'vite', '--host', '127.0.0.1', '--port', '5274', '--strictPort']],
+  ];
+  return { env, dataDir, commands };
+}
 const listening = (port, host) => new Promise(resolve => {
   const socket = net.connect({ port, host });
   const finish = inUse => { socket.destroy(); resolve(inUse); };
@@ -24,59 +51,44 @@ const listening = (port, host) => new Promise(resolve => {
   socket.once('connect', () => finish(true));
   socket.once('error', () => finish(false));
 });
-const busy = [];
-for (const [port, label] of ports) if (await listening(port, '127.0.0.1') || await listening(port, '::1')) busy.push(`${port} (${label})`);
-if (busy.length) refuse(`${busy.length > 1 ? 'ports' : 'port'} ${busy.join(', ')} ${busy.length > 1 ? 'are' : 'is'} already in use. The local demo is probably still running: stop it first, then run pnpm demo:sepolia again.`);
-
-// 2. Load only the two service keys from .env.sepolia. Never print values.
-const envFile = path.join(cwd, '.env.sepolia');
-if (!existsSync(envFile)) refuse('swissquote-wallet/.env.sepolia is missing. Create it with node scripts/sepolia-keys.mjs and fund it first.');
-const fileEnv = parseEnv(readFileSync(envFile, 'utf8'));
-const keys = {};
-for (const name of ['RELAYER_PRIVATE_KEY', 'SQ_ACCOUNT_PRIVATE_KEY']) {
-  const value = fileEnv[name]?.trim();
-  if (!value || !/^0x[0-9a-fA-F]{64}$/.test(value)) refuse(`${name} in .env.sepolia is missing or not a 32-byte hex key (value not shown).`);
-  keys[name] = value;
+export async function launchSepolia() {
+  assertSafeSepoliaEnv(process.env);
+  const busy = [];
+  for (const [port, label] of SEPOLIA_PORTS) {
+    if (await listening(port, '127.0.0.1') || await listening(port, '::1')) busy.push(`${port} (${label})`);
+  }
+  if (busy.length) throw new Error(`V3 ports already in use: ${busy.join(', ')}. Leave the live v2 demo running.`);
+  const envFile = path.join(cwd, '.env.sepolia');
+  if (!existsSync(envFile)) throw new Error('.env.sepolia is missing; ask the run owner to provision service keys.');
+  const fileEnv = parseEnv(readFileSync(envFile, 'utf8'));
+  assertSafeSepoliaEnv(fileEnv);
+  const keys = {};
+  for (const name of ['RELAYER_PRIVATE_KEY', 'SQ_ACCOUNT_PRIVATE_KEY']) {
+    const value = fileEnv[name]?.trim();
+    if (!value || !/^0x[0-9a-fA-F]{64}$/.test(value)) throw new Error(`${name} is missing or invalid (value not shown).`);
+    keys[name] = value;
+  }
+  const { env, dataDir, commands } = sepoliaLaunchConfig(process.env);
+  for (const dir of [env.SQ_DATA_DIR, env.PARTNER_DATA_DIR]) mkdirSync(dir, { recursive: true, mode: 0o700 });
+  console.log('SEPOLIA: real testnet transactions; identity checks, bank account and guardian storage are MOCKS.');
+  console.log(`Open http://localhost:5273. Isolated service data: ${path.relative(cwd, dataDir)}/`);
+  const children = [];
+  let stopping = false;
+  const stop = (code = 0) => {
+    if (stopping) return;
+    stopping = true; process.exitCode = code;
+    for (const child of children) child.kill('SIGTERM');
+  };
+  for (const [label, args] of commands) {
+    // Do not expose sending keys to browsers or the partner process.
+    const childEnv = label === 'Swissquote' ? { ...env, ...keys } : env;
+    const child = spawn('pnpm', args, { cwd, env: childEnv, stdio: 'inherit' });
+    children.push(child);
+    child.on('error', () => { console.error(`${label} failed to start.`); stop(1); });
+    child.on('exit', code => { if (!stopping) { console.error(`${label} stopped; stopping remaining v3 processes.`); stop(code || 1); } });
+  }
+  process.once('SIGTERM', () => stop()); process.once('SIGINT', () => stop());
 }
-
-// 3. Fresh Sepolia data, separate from the local demo (git-ignored via swissquote-wallet/**/data/). Kept across restarts.
-const dataDir = path.join(cwd, 'data', 'sepolia');
-const sqDataDir = path.join(dataDir, 'swissquote');
-const partnerDataDir = path.join(dataDir, 'partner');
-for (const dir of [sqDataDir, partnerDataDir]) mkdirSync(dir, { recursive: true, mode: 0o700 });
-
-// Both services use one viem fallback list for sending and reading. publicnode comes first because it answers
-// sends promptly (ethpandaops' proxy retried an invalid raw transaction for 18 s before answering). It keeps
-// logs for only ~10,000 blocks; for older log ranges it returns error 4444, and the fallback moves on to the
-// full-history nodes. Wallet verification reads logs from the first Sepolia deployment onwards.
-const SERVICE_RPC_URLS = 'https://ethereum-sepolia-rpc.publicnode.com,https://sepolia.gateway.tenderly.co,https://rpc.sepolia.ethpandaops.io';
-// Browser wallet: publicnode for receipts and current reads; ethpandaops as the independent second node.
-const WALLET_RPC_URLS = 'https://ethereum-sepolia-rpc.publicnode.com,https://rpc.sepolia.ethpandaops.io';
-const env = {
-  ...process.env,
-  CHAIN: 'sepolia',
-  ALLOW_SEPOLIA_WRITES: 'true',
-  RPC_URLS: SERVICE_RPC_URLS,
-  ...keys,
-  SQ_DATA_DIR: sqDataDir,
-  PARTNER_DATA_DIR: partnerDataDir,
-  ENABLE_MOCK: 'true',
-  PARTNER_DEMO_FOOLED: 'false',
-  WEBAUTHN_RP_ID: 'localhost',
-  WEBAUTHN_ORIGINS: 'http://localhost:5173',
-  PARTNER_ALLOWED_ORIGINS: 'http://localhost:5173',
-  VITE_CHAIN: 'sepolia',
-  VITE_RPC_URLS: WALLET_RPC_URLS,
-  VITE_SQ_URL: 'http://localhost:4001',
-  VITE_PARTNER_URL: 'http://localhost:4002',
-};
-// The port check above assumes the default ports, so ignore inherited overrides.
-for (const name of ['PORT', 'PARTNER_PORT', 'PARTNER_HOST']) delete env[name];
-
-console.log('SEPOLIA DEMO: real Sepolia testnet transactions, network fees paid by the relayer key in .env.sepolia. Identity checks, bank account and guardian storage are MOCKS.');
-console.log(`Open http://localhost:5173 (passkeys are bound to "localhost"; 127.0.0.1 will not work). Service data: ${path.relative(cwd, dataDir)}/`);
-const child = spawn(process.execPath, ['dev.mjs'], { cwd, env, stdio: 'inherit' });
-child.on('error', error => { console.error(error.message); process.exitCode = 1; });
-child.on('exit', code => { process.exitCode = code ?? 1; });
-process.on('SIGTERM', () => child.kill('SIGTERM'));
-process.on('SIGINT', () => child.kill('SIGINT'));
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  await launchSepolia().catch(error => { console.error(`Sepolia demo not started: ${error.message}`); process.exitCode = 1; });
+}

@@ -9,6 +9,6 @@ module.exports = {
     version: "0.8.20",
     settings: { optimizer: { enabled: true, runs: 1_000_000 }, viaIR: true },
   },
-  networks: { hardhat: { chainId: 31337 } },
+  networks: { hardhat: { chainId: 31337, ...(process.env.V3_LOCAL_OWNED_RUN ? { mining: { auto: true, interval: 1000 } } : {}) } },
   mocha: { timeout: 30 * 60 * 1000 },
 };

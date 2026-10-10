@@ -2,7 +2,13 @@
 import { createPublicClient, createWalletClient, http, keccak256, stringToHex } from 'viem';
 import { hardhat } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
-const transport = http('http://127.0.0.1:8545');
+import { assertIsolatedRpc } from './scripts/v3-local.mjs';
+if (!process.env.V3_LOCAL_OWNED_RUN) throw new Error('Run through the isolated local supervisor; standalone liquidity writes are refused');
+const rpc = assertIsolatedRpc(process.env.INTEGRATION_RPC_URL ?? '');
+const endpoints = (process.env.RPC_URLS ?? '').split(',');
+if (endpoints.length !== 2) throw new Error('Two isolated RPC endpoints required');
+for (const endpoint of endpoints) assertIsolatedRpc(endpoint);
+const transport = http(rpc);
 const client = createPublicClient({ chain: hardhat, transport });
 if (await client.getChainId() !== 31337) throw new Error('Local chain 31337 required');
 const account = privateKeyToAccount(keccak256(stringToHex('sq-local-only/account')));

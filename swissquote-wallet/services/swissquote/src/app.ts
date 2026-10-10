@@ -4,9 +4,12 @@ import { join } from 'node:path';
 import { Store, opaque, digest, hashPassword, checkPassword, type User, type Session, type Challenge } from './store.ts';
 import { address, hex, integer, normalizeTx, classifyTransaction, requireThat, ApiError, MODULES, ZERO, USDC } from './policy.ts';
 import { hashMessage } from 'viem';
+import { strictSponsorship, strictClassification, transactionCalls, callAddresses, refuse } from './policy.ts';
+import { screenAddresses } from './screening.ts';
+import { DAPP_REGISTRY, DAPP_ADDRESSES, checkDappBatch, describeEffects, simulateCalls, revalidateSimulation, DappSimulationError } from '@sq/protocol';
 import { verifyWebAuthn } from './webauthn.ts';
 import { decodeSetupCode, ownershipProofText, encodeCode, buildWalletInitializer } from '@sq/protocol';
-import type { AppOptions, Address, Setup, ChainOperation, PasskeyCredential, Recovery } from './types.ts';
+import { ChainPrebroadcastError, type AppOptions, type Address, type Setup, type ChainOperation, type PasskeyCredential, type Recovery } from './types.ts';
 export { classifyTransaction } from './policy.ts';
 export type * from './types.ts';
 export { createViemChain } from './chain.ts';
@@ -14,6 +17,7 @@ export { createWebAuthn } from './webauthn.ts';
 interface LinkedWallet {clientId:string;setup:Setup & {wallet:Address};verified:boolean;currentOwner?:Address}
 interface StepUp {userId:string;hash:string;expires:number}
 class PreflightError extends ApiError {}
+class BroadcastUncertainError extends Error {}
 export function createApp(options:AppOptions={}) {
   const store=new Store(options.databasePath??join(options.dataDir??'data/swissquote','swissquote.sqlite'));
   const now=options.now??Date.now; const mock=options.allowMock??false; const modules=(options.modules??MODULES).map(v=>v.toLowerCase());
@@ -26,32 +30,105 @@ export function createApp(options:AppOptions={}) {
   const owned=(user:User,wallet:Address)=> {const linked=store.get<LinkedWallet>('wallet',wallet); requireThat(linked?.clientId===user.id&&linked.verified,'Wallet is not verified for this client',403); return linked;};
   const kyc=(user:User)=>requireThat(user.kyc,'MOCK KYC verification required',403);
   const challenge=(id:unknown,purpose:string,userId?:string)=> {requireThat(typeof id==='string','Missing challengeId'); const item=store.get<Challenge>('challenge',id); requireThat(item&&item.expires>now()&&item.purpose===purpose&&(!userId||item.userId===userId),'Challenge expired or invalid',401); store.delete('challenge',id); return item;};
+  const flags=(options.features??(process.env.SQ_FEATURES??'').split(',')).map(v=>v.trim()).filter(Boolean);const strict=strictSponsorship({...options,features:flags});
+  const screen=(addresses:readonly Address[],cancel=false)=>screenAddresses(addresses,cancel?(options.screeningSources??[]).filter(s=>s.kind!=='freeze'):options.screeningSources??[],options.sanctions??[],now());
+  const enforceScreen=async(addresses:readonly Address[],cancel=false)=> {const result=await screen(addresses,cancel);if(result.hits.length) refuse('SANCTIONS_BLOCK','Screening positive hit: sponsorship blocked');if(!cancel&&!result.ok) refuse('SCREENING_UNAVAILABLE','Required screening unavailable or stale');return result;};
+  const dappCalls=(wallet:Address,tx:import('./types.ts').SafeTx,dappId:unknown)=> {const calls=transactionCalls(tx,options);const check=checkDappBatch(wallet,calls);if(!check.ok||typeof dappId!=='string'||check.dappId!==dappId) refuse('NOT_SPONSORED',check.reasons.join('; ')||'dApp registry mismatch');return calls;};
+  const publicSepolia=options.chain?.chainId===11155111;
+  interface SenderIntent {id:string;operation:ChainOperation;state:'uncertain'|'pending';txHash?:`0x${string}`;gas:string;createdAt:number}
+  const senderKey='11155111:global';
+  const reconcileSender=async()=> {
+    const intent=store.get<SenderIntent>('sender-latch',senderKey);
+    if(!intent) return;
+    if(!intent.txHash||!chain().receiptStatus) return intent;
+    let receipt:import('./types.ts').ReceiptStatus;
+    try {receipt=await chain().receiptStatus!(intent.txHash);} catch {return intent;}
+    if((receipt.status!=='confirmed'&&receipt.status!=='reverted')||typeof receipt.blockNumber!=='string'||!/^\d+$/.test(receipt.blockNumber)) return intent;
+    store.transaction(()=> {
+      // Another instance sharing this database may have reconciled and reserved a new send while RPC awaited.
+      if(store.get<SenderIntent>('sender-latch',senderKey)?.id!==intent.id) return;
+      store.put('sender-settlement',intent.id,{txHash:intent.txHash,...receipt});store.put('receipt-settlement',intent.txHash!,receipt);store.put('sender-status',senderKey,{txHash:intent.txHash,...receipt});store.delete('sender-latch',senderKey);
+    });
+    return store.get<SenderIntent>('sender-latch',senderKey);
+  };
+  const refreshResult=async(result:unknown)=> {
+    const value=result as {txHash?:`0x${string}`;status?:string};
+    if(!publicSepolia||!value.txHash||!chain().receiptStatus) return result;
+    await serialize(reconcileSender);
+    const settled=store.get<import('./types.ts').ReceiptStatus>('receipt-settlement',value.txHash);
+    if(settled) return {...value,...settled};
+    try {const receipt=await chain().receiptStatus!(value.txHash);return {...value,...(receipt.status==='confirmed'||receipt.status==='reverted'?receipt:{status:'pending'})};} catch {return {...value,status:'pending'};}
+  };
   let queue:Promise<unknown>=Promise.resolve();
   const serialize=<T>(fn:()=>Promise<T>):Promise<T>=> {const result=queue.then(fn,fn); queue=result.catch(()=>undefined); return result;};
-  const relay=async(operation:ChainOperation,user:User|undefined,protective=false)=>serialize(async()=> {
+  const relay=async(operation:ChainOperation,user:User|undefined,protective=false,beforeSend?:()=>Promise<void>)=>serialize(async()=> {
+    if(publicSepolia) {
+      requireThat(chain().receiptStatus,'Sepolia receipt status API required; nothing broadcast',503);
+      const pending=await reconcileSender();
+      if(operation.kind!=='withdraw'&&pending?.txHash&&JSON.stringify(pending.operation)===JSON.stringify(operation)) return {txHash:pending.txHash,transactionHash:pending.txHash,gas:pending.gas,status:'pending'};
+      requireThat(!pending,pending?.txHash?'Previous submission is pending; sender blocked until receipt':'Previous submission is uncertain; sender blocked until proven settlement',409);
+    }
     const day=Math.floor(now()/86400_000).toString(); const globalKey=day; const accountKey=`${day}:${user?.id}`;
     const global=store.get<number>('global-budget',globalKey)??0; const account=store.get<number>('account-budget',accountKey)??0;
-    // Protective/finalize bypass account caps, but retain an operational global cap.
-    requireThat(global<(options.globalDailyLimit??1000),'Global relayer daily cap reached',429);
+    // Exact owner cancel bypasses the normal global fee budget; finalization does not.
+    const ownerCancel=protective&&operation.kind==='safe-tx';
+    if(!ownerCancel) requireThat(global<(options.globalDailyLimit??1000),'Global relayer daily cap reached',429);
     if(!protective) {requireThat(user,'Login required',401); kyc(user); requireThat(account<(options.accountDailyLimit??50),'Account relayer daily budget reached',429);}
+    if(strict&&operation.kind!=='safe-tx') {
+      const addresses=operation.kind==='deploy'?[operation.setup.owner,operation.setup.cardGuardian,operation.setup.partnerGuardian,operation.setup.sqGuardian]:operation.kind==='withdraw'?[operation.to]:operation.kind==='recovery'?[operation.request.wallet,operation.request.module,operation.request.newOwner]:[operation.wallet,operation.module];
+      await enforceScreen(addresses);
+    }
     let estimate:bigint;
     try {await chain().simulate(operation);estimate=await chain().estimateGas(operation);} catch {throw new PreflightError(502,'Chain preflight refused transaction; nothing broadcast');}
     requireThat(estimate>0n,'Invalid gas estimate',502);
     const gas=(estimate*120n+99n)/100n; requireThat(gas<=(options.gasCap??15_000_000n),'Transaction gas cap exceeded',403);
+    await beforeSend?.();
     // Charge the attempt before broadcast, conservatively retaining budget on uncertain RPC outcomes.
-    store.transaction(()=> {store.put('global-budget',globalKey,global+1); if(!protective) store.put('account-budget',accountKey,account+1);});
+    const intent:SenderIntent={id:randomUUID(),operation,state:'uncertain',gas:gas.toString(),createdAt:now()};
+    store.transaction(()=> {
+      if(publicSepolia) {requireThat(!store.get('sender-latch',senderKey),'Previous submission is uncertain; sender blocked until proven settlement',409);store.put('sender-latch',senderKey,intent);}
+      if(!ownerCancel) store.put('global-budget',globalKey,global+1); if(!protective) store.put('account-budget',accountKey,account+1);
+    });
     let txHash:`0x${string}`;
-    try {txHash=await chain().send(operation,gas);} catch {throw new Error('Uncertain chain broadcast outcome');}
+    try {txHash=await chain().send(operation,gas);} catch(error) {
+      if(error instanceof ChainPrebroadcastError) {
+        if(publicSepolia) store.delete('sender-latch',senderKey);
+        throw new PreflightError(error.status,error.message);
+      }
+      // Do NOT throw ApiError here: callers only roll back reservations for proven pre-broadcast failures.
+      throw new BroadcastUncertainError('Uncertain chain broadcast outcome; sender blocked until proven settlement');
+    }
+    if(publicSepolia) {
+      store.put('sender-latch',senderKey,{...intent,state:'pending',txHash});
+      await reconcileSender();
+      const settled=store.get<{status:'confirmed'|'reverted';blockNumber:string}>('sender-settlement',intent.id);
+      return {txHash,transactionHash:txHash,gas:gas.toString(),...(settled??{status:'pending'})};
+    }
     return {txHash,transactionHash:txHash,gas:gas.toString()};
   });
   async function route(req:IncomingMessage,path:string,body:Record<string,unknown>):Promise<unknown> {
     const post=req.method==='POST';
-    if(req.method==='GET'&&path==='/health') return {ok:true,service:'swissquote',mock,chainId:options.chain?.chainId};
+    if(req.method==='GET'&&path==='/health') return {ok:true,service:'swissquote',mock,chainId:options.chain?.chainId,features:flags,strictSponsorship:strict};
+    if(req.method==='GET'&&path==='/relay/status') return serialize(async()=> {
+      const pending=publicSepolia?await reconcileSender():undefined;
+      const settled=store.get('sender-status',senderKey);
+      return {chainId:chain().chainId,blocked:!!pending,status:pending?.state??'idle',...(pending?.txHash?{txHash:pending.txHash}:{}),lastSettlement:settled};
+    });
+    if(post&&path==='/screen') {requireThat(Array.isArray(body.addresses)&&body.addresses.length>0&&body.addresses.length<=64,'Expected 1–64 addresses');return screen(body.addresses.map(address));}
+    if(req.method==='GET'&&path==='/dapps') return {dapps:DAPP_REGISTRY};
+    if(post&&path==='/dapps/preview') {
+      const user=session(req).user;kyc(user);const wallet=address(body.wallet);owned(user,wallet);requireThat(body.tx&&typeof body.tx==='object','Missing transaction');const tx=normalizeTx(body.tx as Record<string,unknown>);
+      requireThat(tx.safeTxGas==='0'&&tx.baseGas==='0'&&tx.gasPrice==='0'&&tx.gasToken===ZERO&&tx.refundReceiver===ZERO,'Safe gas/refund fields must be zero');
+      const calls=dappCalls(wallet,tx,body.dappId);const screening=await enforceScreen([...callAddresses(wallet,tx,options),...Object.values(DAPP_ADDRESSES)]);
+      const fresh=await simulateCalls(options.simulationClients??[],wallet,calls);
+      store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path,decision:'preview',flags,wallet,safeTxHash:await chain().safeTxHash(wallet,tx),effectsHash:fresh.effectsHash,sources:screening.sources});
+      return {summary:describeEffects(fresh.effects),effectsHash:fresh.effectsHash,blockNumber:fresh.blockNumber,dappId:body.dappId,warnings:DAPP_REGISTRY.filter(d=>d.id===body.dappId).map(d=>d.warning)};
+    }
     if(post&&path==='/auth/password/register') {
       requireThat(typeof body.email==='string'&&body.email.length<=254&&/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(body.email),'Invalid email');
       requireThat(typeof body.password==='string'&&body.password.length>=12&&body.password.length<=1024,'Password must have 12–1024 characters');
       const email=body.email.trim().toLowerCase(); requireThat(!store.get('email',email),'Account already exists',409);
-      const user:User={id:randomUUID(),email,password:hashPassword(body.password),kyc:false,resetAt:null,balance:options.initialMockBalance??'20000000'};
+      const user:User={id:randomUUID(),email,password:hashPassword(body.password),kyc:false,resetAt:null,balance:options.initialMockBalance??(options.chain?.chainId===11155111?'1000000':'20000000')};
       store.transaction(()=>{store.put('user',user.id,user);store.put('email',email,user.id);}); return issueSession(user,'password');
     }
     if(post&&path==='/auth/password/login') {
@@ -85,20 +162,35 @@ export function createApp(options:AppOptions={}) {
       if(body.chainId!==undefined) requireThat(body.chainId===chain().chainId,'Request chain mismatch');
       const wallet=address(body.wallet);requireThat(body.tx&&typeof body.tx==='object','Missing transaction');const tx=normalizeTx(body.tx as Record<string,unknown>);const signature=hex(body.signature);
       requireThat(tx.safeTxGas==='0'&&tx.baseGas==='0'&&tx.gasPrice==='0'&&tx.gasToken===ZERO&&tx.refundReceiver===ZERO,'Safe gas/refund fields must be zero');
-      const classification=await classifyTransaction(wallet,tx,options);let user:User|undefined;
+      const classification=strict?await strictClassification(wallet,tx,options):await classifyTransaction(wallet,tx,options);let user:User|undefined;
       if(classification!=='Protective') {user=session(req).user;kyc(user);owned(user,wallet);}
-      requireThat(await chain().safeNonce(wallet)===tx.nonce,'Stale Safe nonce',409);requireThat(await chain().verifyOwnerSignature(wallet,tx,signature),'Invalid current owner signature',403);
       const hash=await chain().safeTxHash(wallet,tx);
+      const key=`${wallet}:${tx.nonce}`;const prior=store.get<{hash:string;result?:unknown}>('safe-submission',key);
+      if(publicSepolia&&prior) {
+        requireThat(prior.hash===hash,'Different transaction already submitted at this Safe nonce',409);
+        if(prior.result) return refreshResult(prior.result);
+        const pending=store.get<SenderIntent>('sender-latch',senderKey);
+        if(pending?.txHash&&pending.operation.kind==='safe-tx'&&pending.operation.wallet===wallet&&pending.operation.tx.nonce===tx.nonce) return refreshResult({txHash:pending.txHash,transactionHash:pending.txHash,gas:pending.gas,status:'pending',hash,classification});
+        throw new ApiError(409,'Previous submission is uncertain; inspect chain before retry');
+      }
+      requireThat(await chain().safeNonce(wallet)===tx.nonce,'Stale Safe nonce',409);requireThat(await chain().verifyOwnerSignature(wallet,tx,signature),'Invalid current owner signature',403);
+      store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path,decision:'owner-signature-verified',flags,strictSponsorship:strict,wallet,safeTxHash:hash,effectsHash:body.effectsHash});
       if(classification==='Admin'||classification==='Large') {
         if(classification==='Admin') requireThat(body.source==='settings','Admin actions allowed only from Settings',403);
         requireThat(typeof body.stepUpToken==='string','Transaction-bound passkey required',403);const key=digest(body.stepUpToken);const approval=store.get<StepUp>('stepup',key);
         requireThat(approval&&approval.userId===user?.id&&approval.hash.toLowerCase()===hash.toLowerCase()&&approval.expires>now(),'Passkey approval expired, consumed or bound to another transaction',403);store.delete('stepup',key);
       }
+      const isDapp=body.source==='dapp'||body.dappId!==undefined||body.effectsHash!==undefined;
+      const calls=isDapp?dappCalls(wallet,tx,body.dappId):undefined;
+      if(strict&&classification!=='Protective'&&classification!=='Admin'&&transactionCalls(tx,options).some(c=>!c.data.startsWith('0xa9059cbb'))&&!calls) refuse('NOT_SPONSORED','Listed dApp calls require reviewed effectsHash');
+      if(calls) {requireThat(body.source==='dapp','dApp source required',403);requireThat(typeof body.effectsHash==='string'&&/^0x[0-9a-fA-F]{64}$/.test(body.effectsHash),'Reviewed effectsHash required',403);}
+      const screening=(strict||classification==='Protective')?await enforceScreen(classification==='Protective'?[wallet]:[...callAddresses(wallet,tx,options),...(calls?Object.values(DAPP_ADDRESSES):[])],classification==='Protective'):undefined;
       // Reserve this nonce before any asynchronous broadcast. Never retry an uncertain send automatically.
-      const key=`${wallet}:${tx.nonce}`; const prior=store.get<{hash:string;result?:unknown}>('safe-submission',key);
-      if(prior) {requireThat(prior.hash===hash,'Different transaction already submitted at this Safe nonce',409);requireThat(prior.result,'Previous submission is uncertain; inspect chain before retry',409);return prior.result;}
+      // Recheck after asynchronous authorization: another request may have reserved this nonce.
+      const raced=store.get<{hash:string;result?:unknown}>('safe-submission',key);
+      if(raced) {requireThat(raced.hash===hash,'Different transaction already submitted at this Safe nonce',409);requireThat(raced.result,'Previous submission is uncertain; inspect chain before retry',409);return refreshResult(raced.result);}
       store.put('safe-submission',key,{hash});
-      try {const result={...await relay({kind:'safe-tx',wallet,tx,signature},user,classification==='Protective'),classification,hash};store.put('safe-submission',key,{hash,result});return result;} catch(error) { // A simulation failure is safe to retry; an uncertain send remains reserved.
+      try {const result={...await relay({kind:'safe-tx',wallet,tx,signature},user,classification==='Protective',calls?async()=>{try {await revalidateSimulation(options.simulationClients??[],wallet,calls,body.effectsHash as `0x${string}`);} catch(error) {if(error instanceof DappSimulationError) refuse(error.code==='SIMULATION_UNAVAILABLE'?'NOT_SPONSORED':error.code,error.message);throw error;}}:undefined),classification,hash,screening};store.put('safe-submission',key,{hash,result});return result;} catch(error) { // A simulation failure is safe to retry; an uncertain send remains reserved.
         if(error instanceof ApiError) store.delete('safe-submission',key);throw error;
       }
     }
@@ -115,10 +207,10 @@ export function createApp(options:AppOptions={}) {
       const challengeId=opaque();store.put('challenge',challengeId,{userId:user.id,purpose:'stepup',challenge:boundChallenge,hash,expires:now()+120_000});return {...value,challengeId,hash,safeTxHash:hash,options:value};
     }
     if(post&&path==='/auth/passkey/step-up/verify') {const item=challenge(body.challengeId,'stepup',user.id);const verified=await verifyWebAuthn(()=>webauthn().verifyAuthentication(body.response,item.challenge,credentials(user.id)));updateCredential(user.id,verified);requireThat(item.hash,'Missing bound transaction hash',403);if(body.safeTxHash!==undefined) requireThat(hex(body.safeTxHash)===item.hash,'Step-up hash mismatch',403);const stepUpToken=opaque();store.put('stepup',digest(stepUpToken),{userId:user.id,hash:item.hash,expires:now()+120_000});return {stepUpToken,hash:item.hash,safeTxHash:item.hash};}
-    if(post&&path==='/kyc/mock-verify') {requireThat(mock,'MOCK KYC disabled',403);user.kyc=true;store.put('user',user.id,user);return {verified:true,kycVerified:true,mock:true,label:'MOCK KYC'};}
-    if(post&&path==='/demo/fooled') {requireThat(mock,'MOCK demo disabled',403);requireThat(typeof body.enabled==='boolean','Expected enabled boolean');store.put('fooled',user.id,body.enabled);return {enabled:body.enabled,mock:true};}
+    if(post&&path==='/kyc/mock-verify') {requireThat(mock,'MOCK KYC disabled',403);if((options.mockSecoBlockedEmails??[]).map(v=>v.toLowerCase()).includes(user.email.toLowerCase())) refuse('SANCTIONS_BLOCK','MOCK SECO client-name fixture hit (not a real SECO check)');user.kyc=true;store.put('user',user.id,user);return {verified:true,kycVerified:true,mock:true,label:'MOCK KYC + MOCK SECO name check (not real sanctions screening)'};}
+    if(post&&path==='/demo/fooled') {requireThat(typeof body.enabled==='boolean','Expected enabled boolean');requireThat(body.enabled===false,'Signing-enabled fooled demo is disabled',403);requireThat(mock,'MOCK demo disabled',403);store.delete('fooled',user.id);return {enabled:false,mock:true};}
     if(post&&path==='/guardian/enroll') {kyc(user);if(!user.guardianKey) {const {generatePrivateKey,privateKeyToAccount}=await import('viem/accounts');user.guardianKey=generatePrivateKey();user.guardian=privateKeyToAccount(user.guardianKey).address.toLowerCase() as Address;store.put('user',user.id,user);}return {guardian:user.guardian,address:user.guardian,userRef:user.id,mock:true,label:'MOCK HSM: software guardian'};}
-    if(post&&path==='/wallets/challenge') {kyc(user);const wallet=address(body.wallet);const nonce=opaque();const message=ownershipProofText(user.id,wallet,nonce);store.put('challenge',nonce,{userId:user.id,purpose:'ownership',challenge:nonce,wallet,message,expires:now()+300_000});return {nonce,message};}
+    if(post&&path==='/wallets/challenge') {kyc(user);const wallet=address(body.wallet);const nonce=opaque();const message=ownershipProofText(user.id,wallet,nonce,chain().chainId);store.put('challenge',nonce,{userId:user.id,purpose:'ownership',challenge:nonce,wallet,message,expires:now()+300_000});return {nonce,message};}
     if(post&&(path==='/wallets'||path==='/relay/deploy')) {
       kyc(user);let input=body;
       if(typeof body.setupCode==='string') {const code=decodeSetupCode(body.setupCode);requireThat(code.chainId===chain().chainId,'Setup chain mismatch');const proof=body.ownershipProof as Record<string,unknown>|undefined;requireThat(proof&&typeof proof==='object','Ownership proof required');input={...code,cardGuardian:body.cardGuardian,nonce:proof.nonce,signature:proof.signature};}
@@ -130,7 +222,7 @@ export function createApp(options:AppOptions={}) {
       const deployed=store.get<string>('deployment',user.id);requireThat(!deployed||deployed===predicted,'One deployment per account',409);
       if(path==='/relay/deploy') {
         const reservation=store.get<{wallet:string;result?:object}>('deployment-reservation',user.id);
-        if(reservation) {requireThat(reservation.wallet===predicted,'One deployment per account',409);requireThat(reservation.result,'Deployment already reserved; inspect chain before retry',409);return reservation.result;}
+        if(reservation) {requireThat(reservation.wallet===predicted,'One deployment per account',409);requireThat(reservation.result,'Deployment already reserved; inspect chain before retry',409);return refreshResult(reservation.result);}
         store.put('deployment-reservation',user.id,{wallet:predicted});
         try {const result={...await relay({kind:'deploy',setup},user),wallet:predicted};store.put('deployment',user.id,predicted);store.put('deployment-reservation',user.id,{wallet:predicted,result});return result;}
         catch(error) {if(error instanceof ApiError) store.delete('deployment-reservation',user.id);throw error;}
@@ -159,17 +251,17 @@ export function createApp(options:AppOptions={}) {
       requireThat(mock,'MOCK account disabled',403);kyc(user);const to=address(body.to);const linked=store.get<LinkedWallet>('wallet',to);
       requireThat(linked?.verified&&linked.clientId===user.id,'Blocked until Swissquote verifies who owns it (Travel Rule)',403);requireThat(await chain().verifyWallet(linked.setup,{expectedCurrentOwner:linked.currentOwner??linked.setup.owner}),'Wallet rules changed; verification required',403);
       const amount=integer(body.amount);requireThat(BigInt(amount)>0n,'Amount must be positive');
+      if(strict) await enforceScreen([to]);
       // Reserve balance atomically before awaiting a chain call; restore only on definite preflight failures.
-      store.transaction(()=>{const current=getUser(user.id);requireThat(BigInt(current.balance)>=BigInt(amount),'Insufficient MOCK account balance');current.balance=(BigInt(current.balance)-BigInt(amount)).toString();store.put('user',user.id,current);});
+      store.transaction(()=>{const current=getUser(user.id);requireThat(BigInt(current.balance)>=BigInt(amount),'Insufficient MOCK account balance');const paid=BigInt(store.get<string>('mock-payout','total')??'0');requireThat(paid+BigInt(amount)<=BigInt(options.mockPayoutCap??'100000000'),'MOCK payout cap reached',429);store.put('mock-payout','total',(paid+BigInt(amount)).toString());current.balance=(BigInt(current.balance)-BigInt(amount)).toString();store.put('user',user.id,current);});
       try {const result=await relay({kind:'withdraw',to,amount},user);return {...result,mock:true,amount,to};}
-      catch(error) {if(error instanceof ApiError) store.transaction(()=>{const current=getUser(user.id);current.balance=(BigInt(current.balance)+BigInt(amount)).toString();store.put('user',user.id,current);});throw error;}
+      catch(error) {if(error instanceof ApiError) store.transaction(()=>{const current=getUser(user.id);current.balance=(BigInt(current.balance)+BigInt(amount)).toString();store.put('user',user.id,current);store.put('mock-payout','total',(BigInt(store.get<string>('mock-payout','total')??'0')-BigInt(amount)).toString());});throw error;}
     }
     if(post&&(path==='/recovery/approve'||path==='/relay/recovery')) {
       kyc(user);const request=normalizeRecovery(body);owned(user,request.wallet);
       if(path==='/relay/recovery') {requireThat(Array.isArray(body.approvals)&&body.approvals.length>0&&body.approvals.length<=10,'Missing recovery approvals');request.approvals=body.approvals.map(value=>{const item=value as Record<string,unknown>;return {signer:address(item.signer),signature:hex(item.signature)};}).sort((a,b)=>BigInt(a.signer)<BigInt(b.signer)?-1:1);requireThat(new Set(request.approvals.map(v=>v.signer)).size===request.approvals.length,'Duplicate approval signer');await chain().recoveryHash(request);return relay({kind:'recovery',request},user);}
       requireThat(request.module===modules[1],'Swissquote approves module B only',403);requireThat(user.guardianKey&&user.guardian,'Guardian enrollment required',403);
-      const fooled=mock&&store.get<boolean>('fooled',user.id)===true;
-      if(!fooled&&auth.method!=='passkey') {requireThat(user.resetAt!==null&&now()-user.resetAt>=72*3600_000,'Password reset recently: recovery needs a passkey login, or a 72-hour hold plus video ID (MOCK)',403);requireThat(mock&&body.mockVideoId===true,'Recovery requires passkey login or video ID (MOCK)',403);}
+      if(auth.method!=='passkey') {requireThat(user.resetAt!==null&&now()-user.resetAt>=72*3600_000,'Password reset recently: recovery needs a passkey login, or a 72-hour hold plus video ID (MOCK)',403);requireThat(mock&&body.mockVideoId===true,'Recovery requires passkey login or video ID (MOCK)',403);}
       requireThat(await chain().isGuardian(request.wallet,request.module,user.guardian),'Swissquote key is not a guardian',403);const hash=await chain().recoveryHash(request);const signature=await chain().signRecovery(request,user.guardianKey);return {signer:user.guardian,signature,hash,mock:true,request:{...request,chainId:chain().chainId},approvalCode:encodeCode({v:1,kind:'approval',chainId:chain().chainId,signer:user.guardian,signature})};
     }
     throw new ApiError(404,'Route not found');
@@ -183,13 +275,14 @@ export function createApp(options:AppOptions={}) {
     const origin=req.headers.origin;const origins=options.allowedOrigins??['http://localhost:5173','http://127.0.0.1:5173'];
     res.setHeader('Content-Type','application/json');res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');
     if(origin&&origins.includes(origin)) {res.setHeader('Access-Control-Allow-Origin',origin);res.setHeader('Vary','Origin');res.setHeader('Access-Control-Allow-Headers','Authorization, Content-Type');res.setHeader('Access-Control-Allow-Methods','GET, POST, OPTIONS');}
+    let auditPath='';let auditBody:Record<string,unknown>={};
     try {
       requireThat(!origin||origins.includes(origin),'Origin not allowed',403);if(req.method==='OPTIONS') {res.statusCode=204;res.end();return;}
       const path=new URL(req.url??'/','http://localhost').pathname;
       if(path.startsWith('/auth/')) {const key=req.socket.remoteAddress??'local';const bucket=attempts.get(key);const value=!bucket||now()-bucket.window>=60_000?{window:now(),count:0}:bucket;value.count++;attempts.set(key,value);requireThat(value.count<=60,'Authentication rate limit',429);}
       let body:Record<string,unknown>={};if(req.method==='POST') {requireThat((req.headers['content-type']??'').startsWith('application/json'),'Content-Type application/json required',415);let length=0;const chunks:Buffer[]=[];for await(const chunk of req) {const bytes=Buffer.from(chunk);length+=bytes.length;requireThat(length<=128*1024,'Request too large',413);chunks.push(bytes);}try {body=JSON.parse(Buffer.concat(chunks).toString()||'{}') as Record<string,unknown>;} catch {throw new ApiError(400,'Invalid JSON');}requireThat(body&&typeof body==='object'&&!Array.isArray(body),'Expected JSON object');}
-      const result=await route(req,path,body);res.statusCode=200;res.end(JSON.stringify(result));
-    } catch(error) {res.statusCode=error instanceof ApiError?error.status:502;res.end(JSON.stringify({error:error instanceof ApiError?error.message:'Operation failed; inspect local service and chain configuration'}));}
+      auditPath=path;auditBody=body;const result=await route(req,path,body);store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path,decision:'allowed',flags,strictSponsorship:strict,wallet:body.wallet,effectsHash:body.effectsHash,safeTxHash:(result as {hash?:string})?.hash});res.statusCode=200;res.end(JSON.stringify(result));
+    } catch(error) {const code=error instanceof ApiError?error.code:error instanceof DappSimulationError?(error.code==='SIMULATION_UNAVAILABLE'?'NOT_SPONSORED':error.code):undefined;const reason=error instanceof ApiError||error instanceof DappSimulationError||error instanceof BroadcastUncertainError?error.message:'Operation failed; inspect local service and chain configuration';store.put('audit',randomUUID(),{at:new Date(now()).toISOString(),path:auditPath,decision:'refused',flags,strictSponsorship:strict,code,reason,wallet:auditBody.wallet,effectsHash:auditBody.effectsHash});res.statusCode=error instanceof ApiError?error.status:error instanceof DappSimulationError?403:502;res.end(JSON.stringify({error:reason,code}));}
   }
   const server=createServer((req,res)=>{void handler(req,res);});
   return {server,handler,store,close:async()=>{if(server.listening) await new Promise<void>((resolve,reject)=>server.close(error=>error?reject(error):resolve()));store.close();}};

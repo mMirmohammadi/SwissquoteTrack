@@ -23,7 +23,7 @@ export function pinnedRpcUrls(chainId: number, configured: string | undefined, p
   if (urls.length !== 2 || new Set(urls).size !== 2) throw new Error('Configure two distinct local RPC URLs.');
   for (const value of urls) {
     const url = new URL(value);
-    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.username || url.password) throw new Error('Local RPCs must be loopback HTTP URLs without credentials.');
+    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || !['8545', '8645'].includes(url.port) || url.pathname !== '/' || url.search || url.hash || url.username || url.password) throw new Error('Local RPCs must be bare loopback HTTP URLs on port 8545 or 8645 without credentials.');
   }
   return urls;
 }

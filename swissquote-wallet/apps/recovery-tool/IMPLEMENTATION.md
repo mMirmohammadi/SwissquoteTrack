@@ -1,5 +1,17 @@
 # Recovery tool handoff — lane D
 
+## v3 L8 update (current scope)
+
+The rules pane now consumes the frozen `auditWallet(clients,wallet)` contract. It reports same-block facts from distinct clients, current owners, module topology, pending requests, tamper flags and app/owner-key risks. Institutional identities remain unknown without independently confirmed helper addresses; this is deliberately not an institutional-only spending claim or a live collusion replay. The public fragment link opens only the rules pane, never card-word inputs. There is no hardcoded story-wallet address: lead supplies the public setup code.
+
+Card verification preserves the original initializer for CREATE2 while accepting an independently confirmed replacement owner. Offline kit decryption still makes no RPC request. A separate opt-in ownership check compares the recorded kit owner with the sole current owner at one common block; stale, extra-owner and disagreeing states are refused, and the displayed seed is cleared on refusal. It checks ownership, not all Safe rule changes.
+
+v3 defaults use loopback port 5274. The meta CSP retains original 8545/5174 and pinned public providers while explicitly permitting isolated 8645/5274; there is no wildcard. Local RPC validation accepts bare credential-free loopback URLs only on 8545 or 8645. Configure `VITE_CHAIN=local VITE_RPC_URLS=http://127.0.0.1:8645,http://localhost:8645`. These two URLs reach one node, not independent operators.
+
+Fingerprint evidence and exact current acceptance are in [v3 L8 evidence](./V3-L8-EVIDENCE.md). The scoped verifier is [verify-tool.mjs](./scripts/verify-tool.mjs). A SHA-256 match proves file equality only, not publisher authenticity or security. Root submission README, root verifier routing and attaching a trusted fingerprint reference to printed cards remain lead integration work outside this lane's narrowed edit scope. Do not put the final whole-file hash inside the file it hashes: that changes the fingerprint.
+
+The older lane D section below is historical; its port, count and preview observations are not v3 evidence.
+
 ## Result
 
 The independent recovery tool builds and its automated checks pass. It generates and prints recovery cards, verifies wallet setup through two RPCs, checks and signs recovery requests, and decrypts emergency kits offline. The portable build is a single HTML page with executable code and styles inline.

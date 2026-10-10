@@ -24,14 +24,19 @@ const ownerTx = (safeNonce: bigint, blockNumber: bigint): ChainLog => ({
   args: { additionalInfo: encodeAbiParameters([{ type: 'uint256' }, { type: 'address' }, { type: 'uint256' }], [safeNonce, owner, 1n]), operation: 0, to: owner, data: '0x' },
 });
 const moduleTx = (module: Address, operation: number, blockNumber: bigint): ChainLog => ({ event: 'SafeModuleTransaction', blockNumber, args: { module, to: owner, value: 0n, data: '0x', operation } });
-interface FakeOptions { chainId?: number; heads: bigint[]; nonce?: bigint; logs?: ChainLog[]; failAt?: bigint; dropAt?: bigint }
-function fakeClient({ chainId = CHAIN_ID, heads, nonce = 0n, logs = [], failAt, dropAt }: FakeOptions) {
+interface FakeOptions { chainId?: number; heads: bigint[]; deployedAt?: bigint; nonce?: bigint; logs?: ChainLog[]; failAt?: bigint; dropAt?: bigint }
+function fakeClient({ chainId = CHAIN_ID, heads, deployedAt = historyStartBlock(chainId, heads[0]!) + 1n, nonce = 0n, logs = [], failAt, dropAt }: FakeOptions) {
   const ranges: Range[] = [];
+  const codeReads: { address: Address; blockNumber: bigint }[] = [];
   let headReads = 0;
   const inside = (block: bigint | undefined, from: bigint, to: bigint) => block !== undefined && from <= block && block <= to;
   const client = {
     getChainId: async () => chainId,
-    getCode: async ({ address }: { address: Address }) => codes.get(address.toLowerCase()) ?? fixture.proxyRuntimeCode,
+    getCode: async ({ address, blockNumber }: { address: Address; blockNumber: bigint }) => {
+      codeReads.push({ address, blockNumber });
+      // Dependencies retain their pinned bytecode; the wallet has no code before deployment.
+      return codes.get(address.toLowerCase()) ?? (blockNumber < deployedAt ? '0x' : fixture.proxyRuntimeCode);
+    },
     getStorageAt: async ({ slot }: { slot: string }) => slot === GUARD_STORAGE_SLOT ? `0x${'0'.repeat(64)}` : encodeAbiParameters([{ type: 'uint256' }], [BigInt(slot === FALLBACK_STORAGE_SLOT ? ADDRESSES.fallbackHandler : ADDRESSES.safeL2)]),
     readContract: async ({ address, functionName }: { address: Address; functionName: string }) => {
       switch (functionName) {
@@ -56,15 +61,15 @@ function fakeClient({ chainId = CHAIN_ID, heads, nonce = 0n, logs = [], failAt, 
       return logs.filter(log => log.event === event.name && inside(log.blockNumber, fromBlock, toBlock));
     },
   } as unknown as PublicClient;
-  return { client, ranges, headReads: () => headReads };
+  return { client, ranges, codeReads, headReads: () => headReads };
 }
 const span = (from: bigint, to: bigint) => [from, to] as const;
 const spans = (ranges: Range[], event: EventName) => ranges.filter(r => r.event === event).map(r => span(r.fromBlock, r.toBlock));
 
-test('RPC lists: history reads use tenderly + ethpandaops; publicnode stays first for sends and current reads; drpc is gone', () => {
+test('RPC lists: history reads prefer ethpandaops then tenderly; publicnode stays first for sends and current reads; drpc is gone', () => {
   assert.equal(SEPOLIA_HISTORY_START, 11_886_000n);
   assert.equal(LOG_CHUNK_BLOCKS, 10_000n);
-  assert.deepEqual([...HISTORY_RPC_URLS], ['https://sepolia.gateway.tenderly.co', 'https://rpc.sepolia.ethpandaops.io']);
+  assert.deepEqual([...HISTORY_RPC_URLS], ['https://rpc.sepolia.ethpandaops.io', 'https://sepolia.gateway.tenderly.co']);
   assert.equal(PUBLIC_RPC_URLS[0], 'https://ethereum-sepolia-rpc.publicnode.com');
   assert.deepEqual(PUBLIC_RPC_URLS.slice(1), [...HISTORY_RPC_URLS]);
   assert.ok(PUBLIC_RPC_URLS.every(url => url.startsWith('https://') && !url.includes('drpc')));
@@ -84,7 +89,7 @@ for (const [label, blocks, expected] of [
   ['three full chunks plus a one-block remainder (30,001 blocks)', 30_001n, [span(S, S + 9_999n), span(S + 10_000n, S + 19_999n), span(S + 20_000n, S + 29_999n), span(S + 30_000n, S + 30_000n)]],
   ['two full chunks plus a 5,001-block remainder (25,001 blocks)', 25_001n, [span(S, S + 9_999n), span(S + 10_000n, S + 19_999n), span(S + 20_000n, S + 25_000n)]],
   ['exactly one full chunk (10,000 blocks)', 10_000n, [span(S, S + 9_999n)]],
-  ['a single block (head = start)', 1n, [span(S, S)]],
+  ['two blocks covering the predeployment start and deployment head', 2n, [span(S, S + 1n)]],
 ] as const) {
   test(`Sepolia history is read in <= 10,000-block chunks from the default start to the pinned head: ${label}`, async () => {
     const head = S + blocks - 1n;
@@ -92,10 +97,27 @@ for (const [label, blocks, expected] of [
     const result = await verifyWallet(fake.client, sepoliaSetup);
     assert.equal(result.ok, true, result.reasons.join('; '));
     assert.equal(fake.headReads(), 1, 'the head is read once and pinned');
+    assert.deepEqual(fake.codeReads.filter(read => read.address.toLowerCase() === result.wallet.toLowerCase()).map(read => read.blockNumber), [head, S]);
     for (const event of ['SafeMultiSigTransaction', 'SafeModuleTransaction'] as const) assert.deepEqual(spans(fake.ranges, event), expected, event);
     assert.ok(fake.ranges.every(r => r.toBlock - r.fromBlock + 1n <= LOG_CHUNK_BLOCKS && r.toBlock <= head));
   });
 }
+
+test('a bounded single-block scan at deployment fails closed because the wallet already exists at the start', async () => {
+  const fake = fakeClient({ heads: [S], deployedAt: S });
+  const result = await verifyWallet(fake.client, sepoliaSetup);
+  assert.equal(result.ok, false);
+  assert.deepEqual(result.reasons, ['Wallet already existed at history start block']);
+  assert.deepEqual(fake.codeReads.filter(read => read.address.toLowerCase() === result.wallet.toLowerCase()).map(read => read.blockNumber), [S, S]);
+  assert.equal(fake.ranges.length, 0);
+});
+
+test('a single-block genesis scan remains complete and reads both histories', async () => {
+  const fake = fakeClient({ chainId: LOCAL_CHAIN_ID, heads: [0n], deployedAt: 0n, nonce: 1n, logs: [ownerTx(0n, 0n)] });
+  const result = await verifyWallet(fake.client, localSetup);
+  assert.equal(result.ok, true, result.reasons.join('; '));
+  for (const event of ['SafeMultiSigTransaction', 'SafeModuleTransaction'] as const) assert.deepEqual(spans(fake.ranges, event), [span(0n, 0n)]);
+});
 
 test('local chain keeps genesis as the default start and reads the same history in chunks', async () => {
   const fake = fakeClient({ chainId: LOCAL_CHAIN_ID, heads: [25_000n], nonce: 2n, logs: [ownerTx(0n, 5n), ownerTx(1n, 24_999n)] });
@@ -121,13 +143,29 @@ test('an explicit fromBlock wins over the Sepolia default, earlier or later', as
   const earlier = fakeClient({ heads: [head] });
   assert.equal((await verifyWallet(earlier.client, sepoliaSetup, { fromBlock: S - 15_000n })).ok, true);
   assert.deepEqual(spans(earlier.ranges, 'SafeModuleTransaction'), [span(S - 15_000n, S - 5_001n), span(S - 5_000n, head)]);
-  const later = fakeClient({ heads: [S + 20_000n] });
+  const later = fakeClient({ heads: [S + 20_000n], deployedAt: S + 12_346n });
   assert.equal((await verifyWallet(later.client, sepoliaSetup, { fromBlock: S + 12_345n })).ok, true);
   assert.deepEqual(spans(later.ranges, 'SafeModuleTransaction'), [span(S + 12_345n, S + 20_000n)]);
   // An explicit start of 0 on the local chain behaves exactly like the old default.
   const local = fakeClient({ chainId: LOCAL_CHAIN_ID, heads: [9_999n] });
   assert.equal((await verifyWallet(local.client, localSetup, { fromBlock: 0n })).ok, true);
   assert.deepEqual(spans(local.ranges, 'SafeModuleTransaction'), [span(0n, 9_999n)]);
+});
+
+test('an incomplete prefix fails closed even at nonce zero when a forbidden module execution predates fromBlock', async () => {
+  const fromBlock = S + 12_345n;
+  const fake = fakeClient({ heads: [S + 20_000n], deployedAt: S + 1n, logs: [moduleTx(owner, 0, S + 2n)] });
+  const result = await verifyWallet(fake.client, sepoliaSetup, { fromBlock });
+  assert.equal(result.ok, false);
+  assert.equal(result.nonce, 0n, 'module executions do not increment the Safe owner nonce');
+  assert.deepEqual(result.reasons, ['Wallet already existed at history start block']);
+  assert.deepEqual(fake.codeReads.filter(read => read.address.toLowerCase() === result.wallet.toLowerCase()).map(read => read.blockNumber), [S + 20_000n, fromBlock]);
+  assert.equal(fake.ranges.length, 0, 'a partial log scan must not turn an incomplete lifetime green');
+  const complete = fakeClient({ heads: [S + 20_000n], deployedAt: S + 1n, logs: [moduleTx(owner, 0, S + 2n)] });
+  const fullResult = await verifyWallet(complete.client, sepoliaSetup);
+  assert.equal(fullResult.ok, false);
+  assert.deepEqual(fullResult.reasons, ['Forbidden module transaction in wallet history']);
+  assert.deepEqual(spans(complete.ranges, 'SafeModuleTransaction'), [span(S, S + 9_999n), span(S + 10_000n, S + 19_999n), span(S + 20_000n, S + 20_000n)]);
 });
 
 test('an explicit fromBlock above the pinned head fails closed without reading history', async () => {
@@ -162,15 +200,16 @@ test('an RPC error in any chunk fails closed and stops further history reads', a
 
 test('the one-event-per-Safe-nonce rule and module checks see events in every chunk', async () => {
   const head = S + 29_999n;
-  const logs = [ownerTx(0n, S), ownerTx(1n, S + 10_000n), ownerTx(2n, head)];
+  const logs = [ownerTx(0n, S + 1n), ownerTx(1n, S + 10_000n), ownerTx(2n, head)];
   assert.equal((await verifyWallet(fakeClient({ heads: [head], nonce: 3n, logs }).client, sepoliaSetup)).ok, true);
   // A provider that silently omits the middle chunk is caught by the nonce count.
   const dropped = await verifyWallet(fakeClient({ heads: [head], nonce: 3n, logs, dropAt: S + 10_000n }).client, sepoliaSetup);
   assert.equal(dropped.ok, false);
   assert.ok(dropped.reasons.includes('Incomplete Safe transaction history'));
   // Duplicate events for one nonce in different chunks still fail.
-  const duplicate = await verifyWallet(fakeClient({ heads: [head], nonce: 2n, logs: [ownerTx(0n, S), ownerTx(0n, head)] }).client, sepoliaSetup);
+  const duplicate = await verifyWallet(fakeClient({ heads: [head], nonce: 2n, logs: [ownerTx(0n, S + 1n), ownerTx(0n, head)] }).client, sepoliaSetup);
   assert.equal(duplicate.ok, false);
+  assert.ok(duplicate.reasons.includes('Incomplete Safe transaction history'));
   // A forbidden module transaction in the last chunk is found; allowed module calls in earlier chunks pass.
   const moduleLogs = [moduleTx(ADDRESSES.moduleA, 0, S + 3n), moduleTx(ADDRESSES.moduleB, 0, S + 10_001n)];
   assert.equal((await verifyWallet(fakeClient({ heads: [head], logs: moduleLogs }).client, sepoliaSetup)).ok, true);

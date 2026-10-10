@@ -1,7 +1,12 @@
 import { isAddress, type Address, type Hex } from 'viem';
 import type { SafeTx } from './types.js';
 
-export interface ApiError { error: string }
+export type SponsorshipRefusal = 'NOT_SPONSORED' | 'SANCTIONS_BLOCK' | 'SCREENING_UNAVAILABLE' | 'EFFECTS_MISMATCH';
+export interface ApiError { error: string; code?: SponsorshipRefusal }
+export interface ScreenRequest { addresses: Address[] }
+export interface ScreenResult { ok: boolean; checkedAt: string; sources: string[]; hits: Address[]; warnings: string[]; mock: boolean }
+export interface DappPreviewRequest { wallet: Address; tx: SafeTxWire; dappId: string }
+export interface DappPreviewResponse { summary: string[]; effectsHash: Hex; blockNumber: string; dappId: string; warnings: string[] }
 export interface SessionResponse { token: string; clientId: string; userRef: string; kycVerified: boolean }
 export interface PasswordRegisterRequest { email: string; password: string }
 export interface PasswordLoginRequest { email: string; password: string }
@@ -14,7 +19,9 @@ export interface StepUpVerifyRequest { safeTxHash: Hex; challengeId: string; res
 export interface StepUpVerifyResponse { stepUpToken: string; safeTxHash: Hex }
 export interface GuardianEnrollRequest { userRef?: string }
 export interface GuardianEnrollResponse { guardian: Address; userRef: string }
-export interface PartnerEnrollRequest { userRef: string; mockFace: string }
+export interface PartnerEnrollRequest { mockFace: string }
+/** Partner stores only a guardian key and face-check mock data, not institution identity. */
+export interface PartnerEnrollResponse { guardian: Address }
 export interface OwnershipProofWire { message: string; hash: Hex; signature: Hex; nonce: string }
 /** Current-owner expectation is authenticated by a fresh ownership proof, never by login alone. */
 export interface RegisterWalletRequest { setupCode: string; cardGuardian: Address; ownershipProof: OwnershipProofWire; expectedCurrentOwner?: Address }
@@ -26,13 +33,13 @@ export interface TransactionResponse { transactionHash: Hex }
 export interface DeployRequest { owner: Address; cardGuardian: Address; partnerGuardian: Address; sqGuardian: Address; saltNonce: string; chainId: number; initializer?: Hex; wallet?: Address }
 export interface DeployResponse extends TransactionResponse { wallet: Address }
 export interface SafeTxWire { to: Address; value: string; data: Hex; operation: 0 | 1; safeTxGas: string; baseGas: string; gasPrice: string; gasToken: Address; refundReceiver: Address; nonce: string }
-export interface RelaySafeTxRequest { wallet: Address; tx: SafeTxWire; signature: Hex; stepUpToken?: string; source?: 'settings' | 'payment' | 'dapp'; chainId?: number }
+export interface RelaySafeTxRequest { wallet: Address; tx: SafeTxWire; signature: Hex; stepUpToken?: string; source?: 'settings' | 'payment' | 'pay' | 'dapp' | 'recovery'; dappId?: string; effectsHash?: Hex; chainId?: number }
 export interface ApprovalWire { signer: Address; signature: Hex }
 export interface RecoveryWire { wallet: Address; module: Address; newOwner: Address; nonce: string; chainId: number }
 export interface RelayRecoveryRequest extends RecoveryWire { approvals: ApprovalWire[] }
 export interface FinalizeRecoveryRequest { wallet: Address; module: Address }
 export interface SqRecoveryApproveRequest extends RecoveryWire { mockVideoId?: boolean }
-export interface PartnerRecoveryApproveRequest { userRef: string; wallet: Address; newOwner: Address; mockFace: string; nonce?: string; chainId?: number; module?: Address }
+export interface PartnerRecoveryApproveRequest { wallet: Address; newOwner: Address; mockFace: string; nonce?: string; chainId?: number; module?: Address }
 export interface RecoveryApproveResponse extends ApprovalWire { approvalCode: string; request: RecoveryWire }
 export interface MockMailboxMessage { id: string; email: string; subject: string; resetToken: string; createdAt: string; mock: true }
 export interface MockMailboxResponse { messages: MockMailboxMessage[]; mock: true }
@@ -58,6 +65,8 @@ export function safeTxFromWire(tx: SafeTxWire): SafeTx {
 
 /** HTTP registry; authorization is an opaque bearer session, never a private key. */
 export interface HttpApi {
+  'POST /screen': [ScreenRequest, ScreenResult];
+  'POST /dapps/preview': [DappPreviewRequest, DappPreviewResponse];
   'POST /auth/password/register': [PasswordRegisterRequest, SessionResponse];
   'POST /auth/password/login': [PasswordLoginRequest, SessionResponse];
   'POST /auth/password/reset-request': [PasswordResetRequest, { ok: true; mock: true }];
@@ -83,7 +92,7 @@ export interface HttpApi {
   'POST /recovery/approve': [SqRecoveryApproveRequest, RecoveryApproveResponse];
 }
 export interface PartnerHttpApi {
-  'POST /enroll': [PartnerEnrollRequest, GuardianEnrollResponse];
+  'POST /enroll': [PartnerEnrollRequest, PartnerEnrollResponse];
   'POST /recovery/approve': [PartnerRecoveryApproveRequest, RecoveryApproveResponse];
   'POST /demo/fooled': [MockFooledRequest, MockFooledResponse];
 }

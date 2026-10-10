@@ -13,6 +13,10 @@ test('portable build has inline executable code and CSS, no external assets or s
   assert.match(html, /<style>/);
   assert.match(html, /default-src 'none'/);
   assert.match(html, /form-action 'none'/);
+  const policy = html.match(/Content-Security-Policy" content="([^"]+)"/)![1]!;
+  assert(!policy.includes('*'));
+  for (const endpoint of ['http://127.0.0.1:8545', 'http://localhost:8545', 'http://127.0.0.1:8645', 'http://localhost:8645', 'ws://127.0.0.1:5174', 'ws://127.0.0.1:5274', 'https://rpc.sepolia.ethpandaops.io']) assert(policy.includes(endpoint));
+  assert.match(html, /Current ownership is unverified/);
   assert.match(html, /MOCK independent publisher/);
   // Viem contains optional CCIP network code; the tool itself has no persistence calls.
   const main = await readFile(resolve(import.meta.dirname, '../src/main.ts'), 'utf8');

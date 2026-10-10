@@ -8,3 +8,6 @@ export * from './classifier.js';
 export * from './crypto.js';
 export * from './verification.js';
 export * from './api.js';
+export * from './dapps.js';
+export * from './simulate.js';
+export * from './audit.js';

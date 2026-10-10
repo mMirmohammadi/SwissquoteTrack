@@ -6,6 +6,8 @@ import type { WalletSetup, WalletVerification } from './types.js';
 export interface VerificationOptions {
   /** First block of the history scan; must cover wallet creation. Default: historyStartBlock(chainId, head). */
   fromBlock?: bigint;
+  /** Pin every state/history read to this block (independent checks choose a shared head). */
+  blockNumber?: bigint;
   expectedWallet?: Address;
   /** Authenticated current owner; never infer from the RPC's getOwners response. Setup owner remains the CREATE2 creation owner. */
   expectedCurrentOwner?: Address;
@@ -37,45 +39,52 @@ export async function verifyWallet(client: PublicClient, setup: WalletSetup, opt
   try {
     const chainId = await client.getChainId();
     if (chainId !== (setup.chainId ?? CHAIN_ID)) throw new Error('Wallet verification chain mismatch');
+    const toBlock = options.blockNumber ?? await client.getBlockNumber();
+    const atBlock = { blockNumber: toBlock };
     // Pin all dependencies, including factory, before trusting proxyCreationCode or RPC-returned ABI values.
     for (const [address, expectedHash] of Object.entries(CONTRACT_CODE_HASHES)) {
-      const code = await client.getCode({ address: address as Address });
+      const code = await client.getCode({ ...atBlock, address: address as Address });
       if (!code || keccak256(code) !== expectedHash) reasons.push(`Contract code mismatch: ${address}`);
     }
     if (reasons.length) return { ok: false, wallet, reasons };
-    const proxyCode = await client.readContract({ address: ADDRESSES.factory, abi: factoryAbi, functionName: 'proxyCreationCode' });
+    const proxyCode = await client.readContract({ ...atBlock, address: ADDRESSES.factory, abi: factoryAbi, functionName: 'proxyCreationCode' });
     if (keccak256(proxyCode) !== PROXY_CREATION_CODE_HASH) throw new Error('Factory proxy creation code mismatch');
     wallet = computeWalletAddress(setup, proxyCode);
     if (options.expectedWallet && !same(wallet, options.expectedWallet)) reasons.push('Setup code wallet does not match deterministic template');
-    const code = await client.getCode({ address: wallet });
+    const code = await client.getCode({ ...atBlock, address: wallet });
     if (!code || keccak256(code) !== PROXY_RUNTIME_CODE_HASH) throw new Error('Wallet proxy code missing or unexpected');
-    const singleton = await client.getStorageAt({ address: wallet, slot: '0x0' });
+    const singleton = await client.getStorageAt({ ...atBlock, address: wallet, slot: '0x0' });
     if (!singleton || BigInt(singleton) !== BigInt(ADDRESSES.safeL2)) reasons.push('Unexpected Safe singleton');
-    const guard = await client.getStorageAt({ address: wallet, slot: GUARD_STORAGE_SLOT });
+    const guard = await client.getStorageAt({ ...atBlock, address: wallet, slot: GUARD_STORAGE_SLOT });
     if (!guard || BigInt(guard) !== 0n) reasons.push('Hidden guard installed or unreadable');
-    const fallback = await client.getStorageAt({ address: wallet, slot: FALLBACK_STORAGE_SLOT });
+    const fallback = await client.getStorageAt({ ...atBlock, address: wallet, slot: FALLBACK_STORAGE_SLOT });
     if (!fallback || BigInt(fallback) !== BigInt(ADDRESSES.fallbackHandler)) reasons.push('Unexpected fallback handler');
-    nonce = await client.readContract({ address: wallet, abi: safeAbi, functionName: 'nonce' });
-    const owners = await client.readContract({ address: wallet, abi: safeAbi, functionName: 'getOwners' });
-    const threshold = await client.readContract({ address: wallet, abi: safeAbi, functionName: 'getThreshold' });
+    nonce = await client.readContract({ ...atBlock, address: wallet, abi: safeAbi, functionName: 'nonce' });
+    const owners = await client.readContract({ ...atBlock, address: wallet, abi: safeAbi, functionName: 'getOwners' });
+    const threshold = await client.readContract({ ...atBlock, address: wallet, abi: safeAbi, functionName: 'getThreshold' });
     const expectedCurrentOwner = options.expectedCurrentOwner ?? setup.owner;
     if (typeof expectedCurrentOwner !== 'string' || !isAddress(expectedCurrentOwner, { strict: false }) || [ZERO_ADDRESS, SENTINEL_ADDRESS, wallet.toLowerCase()].includes(expectedCurrentOwner.toLowerCase())) throw new Error('Invalid expected current owner');
     if (!sameSet(owners, [expectedCurrentOwner]) || threshold !== 1n) reasons.push('Unexpected owners or owner threshold');
-    const [modules, next] = await client.readContract({ address: wallet, abi: safeAbi, functionName: 'getModulesPaginated', args: [SENTINEL_ADDRESS, 3n] });
+    const [modules, next] = await client.readContract({ ...atBlock, address: wallet, abi: safeAbi, functionName: 'getModulesPaginated', args: [SENTINEL_ADDRESS, 3n] });
     if (!sameSet(modules, MODULES) || !same(next, SENTINEL_ADDRESS)) reasons.push('Hidden, missing, or duplicate recovery modules');
     for (const [module, helper] of [[ADDRESSES.moduleA, setup.partnerGuardian], [ADDRESSES.moduleB, setup.sqGuardian]] as const) {
-      const guardians = await client.readContract({ address: module, abi: moduleAbi, functionName: 'getGuardians', args: [wallet] });
-      const guardianThreshold = await client.readContract({ address: module, abi: moduleAbi, functionName: 'threshold', args: [wallet] });
-      const count = await client.readContract({ address: module, abi: moduleAbi, functionName: 'guardiansCount', args: [wallet] });
+      const guardians = await client.readContract({ ...atBlock, address: module, abi: moduleAbi, functionName: 'getGuardians', args: [wallet] });
+      const guardianThreshold = await client.readContract({ ...atBlock, address: module, abi: moduleAbi, functionName: 'threshold', args: [wallet] });
+      const count = await client.readContract({ ...atBlock, address: module, abi: moduleAbi, functionName: 'guardiansCount', args: [wallet] });
       if (!sameSet(guardians, [setup.cardGuardian, helper]) || guardianThreshold !== 2n || count !== 2n) reasons.push(`Unexpected guardians or threshold: ${module}`);
-      const pending = await client.readContract({ address: module, abi: moduleAbi, functionName: 'getRecoveryRequest', args: [wallet] });
+      const pending = await client.readContract({ ...atBlock, address: module, abi: moduleAbi, functionName: 'getRecoveryRequest', args: [wallet] });
       if (pending.executeAfter !== 0n) reasons.push(`Recovery pending: ${module}`);
     }
     // Module executions do not increment the Safe owner nonce, including recovery at nonce zero.
     // Pin the head once; every history range below ends at this block.
-    const toBlock = await client.getBlockNumber();
     const fromBlock = options.fromBlock ?? historyStartBlock(chainId, toBlock);
-    if (fromBlock > toBlock) throw new Error('Invalid history start block');
+    if (fromBlock < 0n || fromBlock > toBlock) throw new Error('Invalid history start block');
+    // A bounded scan is safe only if it covers the full lifetime of this proxy.
+    // Archive failure must fail closed: nonce-zero module executions can also change owners.
+    if (fromBlock > 0n) {
+      const initialCode = await client.getCode({ address: wallet, blockNumber: fromBlock });
+      if (initialCode && initialCode !== '0x') throw new Error('Wallet already existed at history start block');
+    }
     if (nonce > 0n) {
       const transactions = await readLogsInChunks(fromBlock, toBlock, (from, to) => client.getLogs({ address: wallet, event: multiSigEvent, fromBlock: from, toBlock: to, strict: true }));
       const seen = new Set<string>();
@@ -103,7 +112,13 @@ export async function verifyWalletIndependent(clients: readonly PublicClient[], 
   // Distinct client objects alone do not prove distinct providers: reject duplicate known transport URLs.
   const urls = clients.map(client => (client.transport as { url?: string } | undefined)?.url).filter((url): url is string => !!url);
   if (new Set(urls).size !== urls.length) return { ok: false, wallet: options.expectedWallet ?? ADDRESSES.factory, reasons: ['Duplicate public RPC transport URL'] };
-  const results = await Promise.all(clients.map(client => verifyWallet(client, setup, options)));
+  let blockNumber: bigint;
+  try {
+    blockNumber = options.blockNumber ?? (await Promise.all(clients.map(client => client.getBlockNumber()))).reduce((a, b) => a < b ? a : b);
+  } catch (error) {
+    return { ok: false, wallet: options.expectedWallet ?? ADDRESSES.factory, reasons: [error instanceof Error ? error.message : 'Public RPC head unavailable'] };
+  }
+  const results = await Promise.all(clients.map(client => verifyWallet(client, setup, { ...options, blockNumber })));
   const first = results[0]!;
   const reasons = results.flatMap((r, i) => r.reasons.map(reason => `RPC ${i + 1}: ${reason}`));
   if (results.some(r => !same(r.wallet, first.wallet) || r.nonce !== first.nonce)) reasons.push('Public RPC state disagreement');

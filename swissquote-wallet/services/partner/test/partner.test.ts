@@ -16,7 +16,7 @@ const moduleA = '0x949d01d424bE050D09C16025dd007CB59b3A8c66';
 const hash = `0x${'ab'.repeat(32)}` as const;
 const signature = `0x${'12'.repeat(65)}` as const;
 const key = `0x${'67'.repeat(32)}` as const; // Explicit synthetic injected test fixture; never a real guardian.
-const enroll = { userRef: 'opaque-ref', mockFace: 'MOCK client face' };
+const enroll = { mockFace: 'MOCK client face' };
 const approve = { ...enroll, wallet, newOwner, nonce: '7' };
 function fixture(allowDemoFooled = false, store = new MemoryPartnerStore()) {
   let signs = 0;
@@ -29,8 +29,8 @@ function fixture(allowDemoFooled = false, store = new MemoryPartnerStore()) {
 }
 test('enrollment is idempotent, does not expose keys or replace a guardian', () => {
   const f = fixture();
-  assert.deepEqual(f.service.enroll(enroll), { userRef: enroll.userRef, guardian });
-  assert.throws(() => f.service.enroll({ ...enroll, mockFace: 'thief' }), /face mismatch/);
+  assert.deepEqual(f.service.enroll(enroll), { guardian });
+  assert.throws(() => f.service.enroll({ ...enroll, userRef: 'bank-identity' }), /Unexpected request field/);
   assert.throws(() => f.service.enroll({ ...enroll, privateKey: key }), /Unexpected request field/);
 });
 test('valid approval matches frozen response and decimal nonce', async () => {
@@ -40,7 +40,7 @@ test('valid approval matches frozen response and decimal nonce', async () => {
 });
 test('missing and mismatched MOCK identity never signs', async () => {
   const f = fixture();
-  await assert.rejects(f.service.approve({ ...approve, userRef: 'missing' }), /not found/);
+  await assert.rejects(f.service.approve({ ...approve, userRef: 'bank-identity' }), /Unexpected request field/);
   await assert.rejects(f.service.approve({ ...approve, mockFace: 'thief' }), /face mismatch/);
   assert.equal(f.signs(), 0);
 });
@@ -55,14 +55,30 @@ test('malformed payloads, forbidden module and guardian-as-owner are refused', a
   for (const payload of [null, [], { ...approve, wallet: '0x0' }, { ...approve, newOwner: card }, { ...approve, newOwner: guardian }, { ...approve, nonce: '-1' }, { ...approve, nonce: '01' }, { ...approve, nonce: '9'.repeat(79) }, { ...approve, chainId: 11155111 }, { ...approve, module: card }, { ...approve, sqPrivateKey: key }]) await assert.rejects(f.service.approve(payload));
   assert.equal(f.signs(), 0);
 });
-test('MOCK fooled is opt-in and bypasses only recovery face matching', async () => {
-  assert.throws(() => fixture().service.setDemoFooled({ enabled: true }), /disabled/);
-  const f = fixture(true); assert.deepEqual(f.service.setDemoFooled({ enabled: true }), { enabled: true, mock: true });
-  await f.service.approve({ ...approve, mockFace: 'thief' });
-  assert.throws(() => f.service.enroll({ ...enroll, mockFace: 'thief' }), /face mismatch/);
-  f.set({ recoveryHash: `0x${'ef'.repeat(32)}` });
-  await assert.rejects(f.service.approve({ ...approve, mockFace: 'thief' }), /hash mismatch/);
-  assert.equal(f.signs(), 1);
+test('MOCK fooled cannot sign with a mismatched face, even with legacy opt-in', async () => {
+  for (const optIn of [false, true]) {
+    const f = fixture(optIn);
+    assert.equal(f.service.getDemoFooled(), false);
+    assert.throws(() => f.service.setDemoFooled({ enabled: true }), /signing disabled/);
+    assert.deepEqual(f.service.setDemoFooled({ enabled: false }), { enabled: false, mock: true });
+    await assert.rejects(f.service.approve({ ...approve, mockFace: 'thief' }), /face mismatch/);
+    assert.equal(f.signs(), 0);
+  }
+});
+test('guardian matching is case-insensitive and ambiguous helper-only module fails closed', async () => {
+  const store = new MemoryPartnerStore();
+  const f = fixture(false, store);
+  assert.equal(store.get(guardian.toUpperCase().replace('0X', '0x') as typeof guardian)?.guardian, guardian);
+  store.insert({ faceDigest: 'ab'.repeat(32), privateKey: key, guardian: card });
+  await assert.rejects(f.service.approve(approve), /exactly one enrolled partner guardian/);
+  assert.equal(f.signs(), 0);
+});
+test('another face enrollment cannot replace the guardian configured on the wallet', async () => {
+  const store = new MemoryPartnerStore();
+  const f = fixture(false, store);
+  assert.throws(() => f.service.enroll({ mockFace: 'thief' }), /storage unavailable/); // Injected generator repeats an occupied guardian.
+  await assert.rejects(f.service.approve({ ...approve, mockFace: 'thief' }), /face mismatch/);
+  assert.equal(f.signs(), 0);
 });
 test('RPC errors are sanitized and never result in signing', async () => {
   const f = fixture(); f.unavailable();
@@ -74,13 +90,16 @@ test('independent SQLite stores persist enrollment with restrictive permissions 
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const file = resolve(directory, 'partner.sqlite');
   let store = new SqlitePartnerStore(file);
-  assert.equal(store.insert({ userRef: enroll.userRef, faceDigest: 'aa'.repeat(32), guardian, privateKey: key }), true);
-  assert.equal(store.insert({ userRef: enroll.userRef, faceDigest: 'bb'.repeat(32), guardian: card, privateKey: key }), false);
+  assert.equal(store.insert({ faceDigest: 'aa'.repeat(32), guardian, privateKey: key }), true);
+  assert.equal(store.insert({ faceDigest: 'aa'.repeat(32), guardian: card, privateKey: key }), false);
+  assert.equal(store.insert({ faceDigest: 'bb'.repeat(32), guardian, privateKey: key }), false);
   store.close(); store = new SqlitePartnerStore(file);
-  assert.equal(store.get(enroll.userRef)?.guardian, guardian);
-  const other = new SqlitePartnerStore(':memory:'); assert.equal(other.get(enroll.userRef), undefined);
+  assert.equal(store.get(guardian)?.guardian, guardian);
+  const other = new SqlitePartnerStore(':memory:'); assert.equal(other.get(guardian), undefined);
   assert.equal(statSync(file).mode & 0o777, 0o600);
   assert.equal(readFileSync(file).includes(enroll.mockFace), false);
+  assert.equal(readFileSync(file).includes('user_ref'), false);
+  assert.equal(store.getByFaceDigest('aa'.repeat(32))?.guardian, guardian);
   store.close(); other.close();
 });
 test('HTTP routes are injectable, CORS restricted, JSON bounded, and errors sanitized', async t => {

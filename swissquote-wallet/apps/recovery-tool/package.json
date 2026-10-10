@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5174",
+    "dev": "vite --host 127.0.0.1 --port 5274",
     "build": "vite build && node scripts/inline.mjs",
-    "preview": "vite preview --host 127.0.0.1 --port 5174",
+    "preview": "vite preview --host 127.0.0.1 --port 5274",
     "typecheck": "tsc --noEmit",
     "test": "node --import tsx --test test/*.test.ts"
   },

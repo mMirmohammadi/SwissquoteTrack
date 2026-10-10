@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recoverTypedDataAddress, type PublicClient } from 'viem';
+import { recoverTypedDataAddress, verifyTypedData, type PublicClient } from 'viem';
 import { ADDRESSES, decodeApprovalCode, hashRecovery, recoveryTypedData } from '@sq/protocol';
 import { createPartnerService, type RecoverySnapshot } from '../src/service.ts';
 import { MemoryPartnerStore } from '../src/storage.ts';
@@ -11,13 +11,15 @@ const newOwner = '0x2222222222222222222222222222222222222222';
 const card = '0x4444444444444444444444444444444444444444';
 test('real EIP-712 approval recovers the enrolled guardian and decodes through protocol', async () => {
   const store = new MemoryPartnerStore();
+  let enrolledGuardian = card;
   const service = createPartnerService({ store, crypto: partnerCrypto, moduleA: ADDRESSES.moduleA, chainId: 31337, chainReader: {
     async readRecovery(input): Promise<RecoverySnapshot> {
-      return { chainId: 31337, nonce: 4n, guardians: [input.guardian, card], threshold: 2n, recoveryHash: hashRecovery({ ...input, nonce: 4n }) };
+      return { chainId: 31337, nonce: 4n, guardians: [enrolledGuardian, card], threshold: 2n, recoveryHash: hashRecovery({ ...input, nonce: 4n }) };
     },
   } });
-  const enrollment = service.enroll({ userRef: 'real-crypto-test', mockFace: 'MOCK face' });
-  const approval = await service.approve({ userRef: enrollment.userRef, mockFace: 'MOCK face', wallet, newOwner, nonce: '4' });
+  const enrollment = service.enroll({ mockFace: 'MOCK face' });
+  enrolledGuardian = enrollment.guardian;
+  const approval = await service.approve({ mockFace: 'MOCK face', wallet, newOwner, nonce: '4' });
   const recovered = await recoverTypedDataAddress({ ...recoveryTypedData({ ...approval.request, nonce: 4n }), signature: approval.signature });
   assert.equal(recovered, enrollment.guardian);
   const code = decodeApprovalCode(approval.approvalCode);
@@ -25,10 +27,15 @@ test('real EIP-712 approval recovers the enrolled guardian and decodes through p
   assert.equal(code.signature, approval.signature);
   assert.equal(code.chainId, 31337);
   assert.equal('privateKey' in approval, false);
+  assert.equal('userRef' in enrollment, false);
+  const request = { ...approval.request, nonce: 4n };
+  for (const change of [{ wallet: card }, { module: ADDRESSES.moduleB }, { newOwner: card }, { nonce: 5n }, { chainId: 11155111 }]) {
+    assert.equal(await verifyTypedData({ ...recoveryTypedData({ ...request, ...change }), address: enrollment.guardian, signature: approval.signature }), false);
+  }
 });
 test('chain reader refuses wrong chain before state reads', async () => {
   const reader = createViemChainReader({ getChainId: async () => 11155111 } as unknown as PublicClient);
-  await assert.rejects(reader.readRecovery({ wallet, newOwner, guardian: card, module: ADDRESSES.moduleA, chainId: 31337 }), /RPC chain mismatch/);
+  await assert.rejects(reader.readRecovery({ wallet, newOwner, module: ADDRESSES.moduleA, chainId: 31337 }), /RPC chain mismatch/);
 });
 test('chain reader refuses absent wallet, disabled module and unpinned module code', async () => {
   for (const change of [{ walletCode: '0x' }, { enabled: false }, { moduleCode: '0x6000' }]) {
@@ -46,6 +53,6 @@ test('chain reader refuses absent wallet, disabled module and unpinned module co
         throw new Error('Hash must not be read for unsafe code');
       },
     } as unknown as PublicClient;
-    await assert.rejects(createViemChainReader(client).readRecovery({ wallet, newOwner, guardian: card, module: ADDRESSES.moduleA, chainId: 31337 }));
+    await assert.rejects(createViemChainReader(client).readRecovery({ wallet, newOwner, module: ADDRESSES.moduleA, chainId: 31337 }));
   }
 });

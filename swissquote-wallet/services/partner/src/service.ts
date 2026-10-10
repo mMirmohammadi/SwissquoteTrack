@@ -1,6 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import type { Address, Hex } from 'viem';
-import type { GuardianEnrollResponse, PartnerEnrollRequest, PartnerRecoveryApproveRequest, RecoveryApproveResponse, RecoveryRequest } from '@sq/protocol';
+import type { PartnerEnrollResponse, PartnerEnrollRequest, PartnerRecoveryApproveRequest, RecoveryApproveResponse, RecoveryRequest } from '@sq/protocol';
 import type { PartnerStore } from './storage.ts';
 
 export class PartnerError extends Error {
@@ -9,7 +9,7 @@ export class PartnerError extends Error {
 }
 export interface RecoverySnapshot { chainId: number; nonce: bigint; guardians: readonly Address[]; threshold: bigint; recoveryHash: Hex }
 export interface PartnerChainReader {
-  readRecovery(request: { wallet: Address; module: Address; newOwner: Address; guardian: Address; chainId: number }): Promise<RecoverySnapshot>;
+  readRecovery(request: { wallet: Address; module: Address; newOwner: Address; chainId: number }): Promise<RecoverySnapshot>;
 }
 export interface PartnerCrypto {
   generateGuardian(): { privateKey: Hex; address: Address };
@@ -45,41 +45,39 @@ const faceMatches = (digest: string, face: string): boolean => timingSafeEqual(B
 
 export function createPartnerService(options: PartnerServiceOptions) {
   if (![31337, 11155111].includes(options.chainId)) throw new Error('Partner supports only local or Sepolia chain');
-  let fooled = false;
   const { store, crypto, chainReader, moduleA, chainId } = options;
-  function enroll(input: PartnerEnrollRequest | unknown): GuardianEnrollResponse {
-    const body = validateObject(input, ['userRef', 'mockFace']);
-    const userRef = text(body.userRef, 'userRef', 256);
+  function enroll(input: PartnerEnrollRequest | unknown): PartnerEnrollResponse {
+    const body = validateObject(input, ['mockFace']);
     const mockFace = text(body.mockFace, 'MOCK face', 1024);
-    let existing = store.get(userRef);
+    const digest = faceDigest(mockFace);
+    let existing = store.getByFaceDigest(digest);
     if (!existing) {
       const key = crypto.generateGuardian();
-      store.insert({ userRef, faceDigest: faceDigest(mockFace), privateKey: key.privateKey, guardian: key.address });
-      existing = store.get(userRef);
+      store.insert({ faceDigest: digest, privateKey: key.privateKey, guardian: key.address });
+      existing = store.getByFaceDigest(digest);
     }
     if (!existing) throw new PartnerError(503, 'Partner enrollment storage unavailable');
-    // The demo switch never permits replacing somebody else's enrollment.
-    if (!faceMatches(existing.faceDigest, mockFace)) throw new PartnerError(403, 'MOCK face mismatch; enrollment already exists');
-    return { userRef, guardian: existing.guardian };
+    return { guardian: existing.guardian };
   }
   async function approve(input: PartnerRecoveryApproveRequest | unknown): Promise<RecoveryApproveResponse> {
-    const body = validateObject(input, ['userRef', 'wallet', 'newOwner', 'mockFace', 'nonce', 'chainId', 'module']);
-    const userRef = text(body.userRef, 'userRef', 256);
+    const body = validateObject(input, ['wallet', 'newOwner', 'mockFace', 'nonce', 'chainId', 'module']);
     const mockFace = text(body.mockFace, 'MOCK face', 1024);
     const wallet = address(body.wallet, 'wallet');
     const newOwner = address(body.newOwner, 'newOwner');
     if (body.chainId !== undefined && body.chainId !== chainId) throw new PartnerError(400, 'Recovery chain does not match configured chain');
     if (body.module !== undefined && !sameAddress(address(body.module, 'module'), moduleA)) throw new PartnerError(400, 'Partner approves module A only');
     if (body.nonce !== undefined && (typeof body.nonce !== 'string' || !/^(0|[1-9][0-9]*)$/.test(body.nonce) || body.nonce.length > 78 || BigInt(body.nonce) >= 2n ** 256n)) throw new PartnerError(400, 'Invalid recovery nonce');
-    const record = store.get(userRef);
-    if (!record) throw new PartnerError(404, 'Partner enrollment not found');
-    if (!fooled && !faceMatches(record.faceDigest, mockFace)) throw new PartnerError(403, 'MOCK face mismatch');
-    if (sameAddress(wallet, newOwner) || sameAddress(newOwner, record.guardian)) throw new PartnerError(400, 'New owner must differ from wallet and partner guardian');
+    if (sameAddress(wallet, newOwner)) throw new PartnerError(400, 'New owner must differ from wallet');
     let snapshot: RecoverySnapshot;
-    try { snapshot = await chainReader.readRecovery({ wallet, newOwner, module: moduleA, guardian: record.guardian, chainId }); }
+    try { snapshot = await chainReader.readRecovery({ wallet, newOwner, module: moduleA, chainId }); }
     catch { throw new PartnerError(503, 'Chain verification unavailable; no approval signed'); }
     if (snapshot.chainId !== chainId) throw new PartnerError(409, 'RPC chain id mismatch');
-    if (snapshot.threshold !== 2n || snapshot.guardians.length !== 2 || new Set(snapshot.guardians.map(g => g.toLowerCase())).size !== 2 || !snapshot.guardians.some(g => sameAddress(g, record.guardian))) throw new PartnerError(409, 'Partner is not a guardian of the required 2-of-2 module A');
+    if (snapshot.threshold !== 2n || snapshot.guardians.length !== 2 || new Set(snapshot.guardians.map(g => g.toLowerCase())).size !== 2) throw new PartnerError(409, 'Partner is not a guardian of the required 2-of-2 module A');
+    // Match only the public configured guardian set; no bank identity or request-supplied key selector.
+    const records = snapshot.guardians.flatMap(g => { const record = store.get(g); return record ? [record] : []; });
+    if (records.length !== 1) throw new PartnerError(409, 'Required module A must contain exactly one enrolled partner guardian');
+    const record = records[0];
+    if (!faceMatches(record.faceDigest, mockFace)) throw new PartnerError(403, 'MOCK face mismatch');
     if (snapshot.guardians.some(g => sameAddress(g, newOwner))) throw new PartnerError(400, 'New owner cannot be a recovery guardian');
     if (snapshot.nonce < 0n || snapshot.nonce >= 2n ** 256n) throw new PartnerError(409, 'Invalid on-chain recovery nonce');
     if (body.nonce !== undefined && BigInt(body.nonce as string) !== snapshot.nonce) throw new PartnerError(409, 'Stale recovery nonce');
@@ -95,12 +93,11 @@ export function createPartnerService(options: PartnerServiceOptions) {
     };
   }
   function setDemoFooled(input: unknown): { enabled: boolean; mock: true } {
-    if (!options.allowDemoFooled) throw new PartnerError(403, 'MOCK fooled switch disabled by configuration');
     const body = validateObject(input, ['enabled']);
     if (typeof body.enabled !== 'boolean') throw new PartnerError(400, 'enabled must be boolean');
-    fooled = body.enabled;
-    return { enabled: fooled, mock: true };
+    if (body.enabled) throw new PartnerError(403, 'MOCK fooled signing disabled; use a throwaway fixture or explanatory demo');
+    return { enabled: false, mock: true };
   }
-  return { enroll, approve, setDemoFooled, getDemoFooled: () => fooled };
+  return { enroll, approve, setDemoFooled, getDemoFooled: () => false };
 }
 export type PartnerService = ReturnType<typeof createPartnerService>;

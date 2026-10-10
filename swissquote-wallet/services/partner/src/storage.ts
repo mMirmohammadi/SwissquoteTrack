@@ -3,38 +3,45 @@ import { mkdirSync, chmodSync } from 'node:fs';
 import { dirname } from 'node:path';
 import type { Address, Hex } from 'viem';
 
-/** Only partner records belong in this store. Plain keys are a MOCK HSM, not production custody. */
-export interface PartnerRecord { userRef: string; faceDigest: string; privateKey: Hex; guardian: Address }
+/** Plain local keys and exact-string face digests are MOCK custody/authentication only. */
+export interface PartnerRecord { faceDigest: string; privateKey: Hex; guardian: Address }
 export interface PartnerStore {
-  get(userRef: string): PartnerRecord | undefined;
+  get(guardian: Address): PartnerRecord | undefined;
+  getByFaceDigest(digest: string): PartnerRecord | undefined;
   insert(record: PartnerRecord): boolean;
   close?(): void;
 }
 export class MemoryPartnerStore implements PartnerStore {
   #records = new Map<string, PartnerRecord>();
-  get(userRef: string): PartnerRecord | undefined { const r = this.#records.get(userRef); return r ? { ...r } : undefined; }
+  get(guardian: Address): PartnerRecord | undefined { const r = this.#records.get(guardian.toLowerCase()); return r ? { ...r } : undefined; }
+  getByFaceDigest(digest: string): PartnerRecord | undefined {
+    const r = [...this.#records.values()].find(record => record.faceDigest === digest); return r ? { ...r } : undefined;
+  }
   insert(record: PartnerRecord): boolean {
-    if (this.#records.has(record.userRef)) return false;
-    this.#records.set(record.userRef, { ...record }); return true;
+    if (this.get(record.guardian) || this.getByFaceDigest(record.faceDigest)) return false;
+    this.#records.set(record.guardian.toLowerCase(), { ...record }); return true;
   }
 }
 export class SqlitePartnerStore implements PartnerStore {
   #db: DatabaseSync;
   constructor(filename: string) {
-    if (filename !== ':memory:') {
-      mkdirSync(dirname(filename), { recursive: true, mode: 0o700 });
-    }
+    if (filename !== ':memory:') mkdirSync(dirname(filename), { recursive: true, mode: 0o700 });
     this.#db = new DatabaseSync(filename);
     if (filename !== ':memory:') chmodSync(filename, 0o600);
-    this.#db.exec('PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS partner_guardians (user_ref TEXT PRIMARY KEY, face_digest TEXT NOT NULL, private_key TEXT NOT NULL, guardian TEXT NOT NULL) STRICT');
+    // Separate v3 schema: do not read/migrate identity-bearing legacy records automatically.
+    this.#db.exec('PRAGMA busy_timeout=5000; CREATE TABLE IF NOT EXISTS partner_guardians_v3 (guardian TEXT PRIMARY KEY, face_digest TEXT NOT NULL UNIQUE, private_key TEXT NOT NULL) STRICT');
   }
-  get(userRef: string): PartnerRecord | undefined {
-    const r = this.#db.prepare('SELECT user_ref,face_digest,private_key,guardian FROM partner_guardians WHERE user_ref=?').get(userRef);
-    if (!r) return undefined;
-    return { userRef: String(r.user_ref), faceDigest: String(r.face_digest), privateKey: String(r.private_key) as Hex, guardian: String(r.guardian) as Address };
+  #record(r: Record<string, unknown> | undefined): PartnerRecord | undefined {
+    return r ? { faceDigest: String(r.face_digest), privateKey: String(r.private_key) as Hex, guardian: String(r.guardian) as Address } : undefined;
+  }
+  get(guardian: Address): PartnerRecord | undefined {
+    return this.#record(this.#db.prepare('SELECT face_digest,private_key,guardian FROM partner_guardians_v3 WHERE guardian=?').get(guardian.toLowerCase()));
+  }
+  getByFaceDigest(digest: string): PartnerRecord | undefined {
+    return this.#record(this.#db.prepare('SELECT face_digest,private_key,guardian FROM partner_guardians_v3 WHERE face_digest=?').get(digest));
   }
   insert(r: PartnerRecord): boolean {
-    return this.#db.prepare('INSERT OR IGNORE INTO partner_guardians VALUES (?,?,?,?)').run(r.userRef, r.faceDigest, r.privateKey, r.guardian).changes === 1;
+    return this.#db.prepare('INSERT OR IGNORE INTO partner_guardians_v3 (guardian,face_digest,private_key) VALUES (?,?,?)').run(r.guardian.toLowerCase(), r.faceDigest, r.privateKey).changes === 1;
   }
   close(): void { this.#db.close(); }
 }

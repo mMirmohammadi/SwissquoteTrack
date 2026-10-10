@@ -13,7 +13,7 @@ test('card generation derives a valid 12-word guardian', () => {
 test('kit roundtrip offline; ciphertext and authenticated metadata tampering fail', async () => {
   const code = await generateKitCode(); const owner = mnemonicToAddress(words);
   const kit = await createKit(words, code, { wallet: address, owner, chainId: LOCAL_CHAIN_ID });
-  assert.deepEqual(await openEmergencyKit(JSON.stringify(kit), code), { mnemonic: words, owner });
+  assert.deepEqual(await openEmergencyKit(JSON.stringify(kit), code), { mnemonic: words, owner, wallet: address, chainId: LOCAL_CHAIN_ID });
   const badCipher = (kit.ciphertext[0] === 'A' ? 'B' : 'A') + kit.ciphertext.slice(1);
   for (const modified of [{ ...kit, ciphertext: badCipher }, { ...kit, wallet: '0x3333333333333333333333333333333333333333' }, { ...kit, owner: address }, { ...kit, path: 'm/0' }, { ...kit, chainId: 1 }, { ...kit, kdf: { ...kit.kdf, iterations: 1 } }]) {
     await assert.rejects(openEmergencyKit(JSON.stringify(modified), code));

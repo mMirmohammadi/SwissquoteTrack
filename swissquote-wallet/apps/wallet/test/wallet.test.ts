@@ -23,7 +23,7 @@ test('countdown follows executeAfter and never reports negative time', () => {
 test('API adapter uses actual endpoint and Bearer header, surfaces HTTP failures', async () => {
   const original = globalThis.fetch;
   try {
-    globalThis.fetch = async (url, options) => { assert.equal(String(url), 'http://localhost:4001/relay/safe-tx'); assert.equal((options?.headers as Record<string,string>).Authorization, 'Bearer opaque-test-session'); assert.deepEqual(JSON.parse(String(options?.body)), { nonce: '3' }); return new Response('{"error":"Stale Safe nonce"}', { status: 409 }); };
+    globalThis.fetch = async (url, options) => { assert.equal(String(url), 'http://localhost:4101/relay/safe-tx'); assert.equal((options?.headers as Record<string,string>).Authorization, 'Bearer opaque-test-session'); assert.deepEqual(JSON.parse(String(options?.body)), { nonce: '3' }); return new Response('{"error":"Stale Safe nonce"}', { status: 409 }); };
     await assert.rejects(call('/relay/safe-tx', { token: 'opaque-test-session', body: { nonce: '3' } }), (error: unknown) => error instanceof ServiceError && error.status === 409 && error.message === 'Stale Safe nonce');
     globalThis.fetch = async () => new Response('not-json'); await assert.rejects(call('/account'), /unreadable/);
     globalThis.fetch = async () => { throw new Error('socket failure'); }; await assert.rejects(call('/account'), /Cannot reach/);
