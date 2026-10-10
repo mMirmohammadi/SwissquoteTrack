@@ -1,0 +1,10 @@
+{
+  "name": "@sq/swissquote",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {".": "./src/app.ts", "./types": "./src/types.ts"},
+  "scripts": {"dev": "tsx src/main.ts", "build": "tsc --noEmit", "typecheck": "tsc --noEmit", "test": "node --import tsx --test test/*.test.ts"},
+  "dependencies": {"@sq/protocol": "workspace:*", "@simplewebauthn/server": "^14.0.0", "viem": "^2.38.0"},
+  "devDependencies": {"@types/node": "^24.0.0", "typescript": "^5.9.0", "tsx": "^4.20.0"}
+}

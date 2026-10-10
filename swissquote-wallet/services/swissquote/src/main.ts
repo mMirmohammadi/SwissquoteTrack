@@ -1,0 +1,13 @@
+import { createApp } from './app.ts';
+import { createViemChain } from './chain.ts';
+import { createWebAuthn } from './webauthn.ts';
+import type { Hex } from './types.ts';
+import { privateKeyToAccount } from 'viem/accounts';
+const chainId=process.env.CHAIN==='sepolia'?11155111:31337;
+const rpcUrls=(process.env.RPC_URLS??'http://127.0.0.1:8545,http://localhost:8545').split(',').map(value=>value.trim());
+const key=process.env.RELAYER_PRIVATE_KEY;const accountKey=process.env.SQ_ACCOUNT_PRIVATE_KEY;
+const chain=key?createViemChain({chainId,rpcUrls,relayerPrivateKey:key as Hex,accountPrivateKey:accountKey as Hex|undefined,allowSepoliaWrites:process.env.ALLOW_SEPOLIA_WRITES==='true'}):undefined;
+const origin=(process.env.WEBAUTHN_ORIGINS??'http://localhost:5173,http://127.0.0.1:5173').split(',');
+const app=createApp({chain,accountAddress:accountKey?privateKeyToAccount(accountKey as Hex).address:undefined,allowMock:process.env.ENABLE_MOCK==='true',dataDir:process.env.SQ_DATA_DIR??new URL('../data/',import.meta.url).pathname,webauthn:createWebAuthn({rpID:process.env.WEBAUTHN_RP_ID??'localhost',origin}),allowedOrigins:origin});
+const port=Number(process.env.PORT??4001);app.server.listen(port,'127.0.0.1',()=>console.log(`Swissquote service http://127.0.0.1:${port}; chain ${chainId}; MOCK ${process.env.ENABLE_MOCK==='true'}; Sepolia writes ${process.env.ALLOW_SEPOLIA_WRITES==='true'}`));
+for(const signal of ['SIGINT','SIGTERM'] as const) process.once(signal,()=>{void app.close().then(()=>process.exit(0));});

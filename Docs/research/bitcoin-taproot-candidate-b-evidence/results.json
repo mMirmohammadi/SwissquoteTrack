@@ -1,0 +1,1535 @@
+{
+  "started": "2026-10-10T13:41:27.277Z",
+  "run": "/home/dev/Hackaton/SwissquoteTrack/AgentsLocal/4ccb895d/bitcoin-regtest/run-2I79Pm",
+  "network": "regtest",
+  "N": 6,
+  "policy": "and(pk(R),and(or(pk(P),pk(SQ)),older(6)))",
+  "sourceSha256": "55880042f9f054e559f06f3276d464551ffe53c3b08fa4c5320c3021c26d2c3b",
+  "nodeVersion": "v26.4.0",
+  "compiler": "@bitcoinerlab/miniscript-policies@1.1.0 (reference compiler + tapscript rewrite/validation shim)",
+  "analysis": "@bitcoinerlab/miniscript@2.0.0",
+  "signer": "@scure/btc-signer@2.4.1",
+  "symbolicMiniscript": "and_v(v:pk(R),and_v(or_c(pk(P),v:pk(SQ)),older(6)))",
+  "concreteMiniscript": "and_v(v:pk(de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa),and_v(or_c(pk(675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76),v:pk(741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07)),older(6)))",
+  "symbolicASM": "<R> OP_CHECKSIGVERIFY <P> OP_CHECKSIG OP_NOTIF <SQ> OP_CHECKSIGVERIFY OP_ENDIF 6 OP_CHECKSEQUENCEVERIFY",
+  "scriptHex": "20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b2",
+  "scriptBytes": 106,
+  "internalKey": "d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+  "publicKeys": {
+    "U": "d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+    "R": "de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa",
+    "P": "675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76",
+    "SQ": "741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07",
+    "NEW_U": "b530b2b5f8907e20961f4a9f62b23f68b0b94eadd968915e876d54156fd40ee5",
+    "DEST": "eeaf05ba1001e76f53638c4809843642e19724561f32f2716e3b8f1a1ca41212",
+    "ATTACKER": "3b31f7b57999ba759841127bdc16a30f26df6f1a9425eae3fe660987168a5c06"
+  },
+  "tapMerkleRoot": "8de40ef1d533eb419f585322fe92a2d2f93fc5788ff10ef7e090aa5a3c042f9c",
+  "controlBlockHex": "c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50",
+  "address": "bcrt1p00anmjx8jefrd3jsurkct4hz90t547chp0rclyy26v744up77grqzyau2y",
+  "scriptPubKey": "51207bfb3dc8c7965236c650e0ed85d6e22bd74afb170bc78f908ad33d5af03ef206",
+  "recoveryAddress": "bcrt1pn4zmad3xqkfr0dhwxhvpae68ax2uf5sgqkz86fckdahnyt4rqmwsd5vl7y",
+  "descriptor": "tr(d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50,and_v(v:pk(de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa),and_v(or_c(pk(675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76),v:pk(741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07)),older(6))))",
+  "witnessTemplates": [
+    {
+      "asm": "<sig(P)> <sig(R)>",
+      "nSequence": 6
+    },
+    {
+      "asm": "<sig(SQ)> 0 <sig(R)>",
+      "nSequence": 6
+    }
+  ],
+  "checks": [
+    {
+      "name": "Isolated regtest node: networking disabled, no peers",
+      "passed": true,
+      "version": 290000
+    },
+    {
+      "name": "Taproot consensus deployment active",
+      "passed": true,
+      "type": "bip9",
+      "height": 0,
+      "active": true,
+      "bip9": {
+        "start_time": -1,
+        "timeout": 9223372036854776000,
+        "min_activation_height": 0,
+        "status": "active",
+        "since": 0,
+        "status_next": "active"
+      }
+    },
+    {
+      "name": "Core independently parses compiled descriptor and derives the identical Taproot address",
+      "passed": true,
+      "address": "bcrt1p00anmjx8jefrd3jsurkct4hz90t547chp0rclyy26v744up77grqzyau2y"
+    },
+    {
+      "name": "Phone key without recovery-tree metadata derives a different address",
+      "passed": true,
+      "withoutTree": "bcrt1pp9k7pdsnd3lsduwfs3fxqk9ydx00sh78wvrr63c38dtzsa2wg90sf72huj",
+      "withTree": "bcrt1p00anmjx8jefrd3jsurkct4hz90t547chp0rclyy26v744up77grqzyau2y"
+    },
+    {
+      "name": "Replacing the phone key changes the address",
+      "passed": true,
+      "old": "bcrt1p00anmjx8jefrd3jsurkct4hz90t547chp0rclyy26v744up77grqzyau2y",
+      "replacement": "bcrt1pn4zmad3xqkfr0dhwxhvpae68ax2uf5sgqkz86fckdahnyt4rqmwsd5vl7y"
+    },
+    {
+      "name": "Recovery before CSV age fails mempool validation",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      },
+      "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+      "transactionHex": "0200000000010121457d200adb502918f1d144e0f3605f2ccc85730106eb8e54ba7c3ed53cce4e00000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044029c9ed4a32de48967b07e57de5077c960e2cba51d4e6749f726508ccf4e04a091fc3f0f3c52ed1524a8dd6a80590a9b156104b2270c5597fda00d22993bd3aa740a4f2c363ba1ba5911d07ab5c624e2d2490b6ab6433ed3ebc609dd2bc31ff2be4fa6393766af020ed665cb11e777973c22c4af991affc4751d03946583393014d6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 102,
+      "witnessItems": 4
+    },
+    {
+      "name": "Recovery before CSV age fails block validation",
+      "passed": true,
+      "blockRejection": {
+        "code": -25,
+        "message": "TestBlockValidity failed: bad-txns-nonfinal, contains a non-BIP68-final transaction ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7"
+      },
+      "height": 102,
+      "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7"
+    },
+    {
+      "name": "Phone key path works immediately with final sequence",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "96a5cf0282d86eb145243a5807f7e3f5f32858f1ae14f631c5398a338a11229d",
+        "wtxid": "f2f2c6ec931f94bcd247799ac0668e22dcff755af6311988a69a08db7e557ca5",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "f2f2c6ec931f94bcd247799ac0668e22dcff755af6311988a69a08db7e557ca5"
+          ]
+        }
+      },
+      "txid": "96a5cf0282d86eb145243a5807f7e3f5f32858f1ae14f631c5398a338a11229d",
+      "transactionHex": "02000000000101b96455f6cafbf0065dabee15f8bc8d38794c3e657c75f965615dd648f2c603990100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014065615ef4a057fc58e245500ef6030c6da9dba10a86f83982237b87f00ef61384cd768ebb760a06582db22b1ffed9011b2ed61c508a3788eafbdb2b4959f9679c00000000",
+      "height": 102,
+      "witnessItems": 1
+    },
+    {
+      "name": "Phone-only key-path spend actually mined",
+      "passed": true,
+      "txid": "96a5cf0282d86eb145243a5807f7e3f5f32858f1ae14f631c5398a338a11229d",
+      "blockhash": "5b54d9afd3db2afcb535ec11b6bb5220a63143540a2c9a1c72c86db2d3aa8e49",
+      "height": 103
+    },
+    {
+      "name": "CSV boundary: next block H+N-1 rejected",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      },
+      "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+      "transactionHex": "0200000000010121457d200adb502918f1d144e0f3605f2ccc85730106eb8e54ba7c3ed53cce4e00000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044029c9ed4a32de48967b07e57de5077c960e2cba51d4e6749f726508ccf4e04a091fc3f0f3c52ed1524a8dd6a80590a9b156104b2270c5597fda00d22993bd3aa740a4f2c363ba1ba5911d07ab5c624e2d2490b6ab6433ed3ebc609dd2bc31ff2be4fa6393766af020ed665cb11e777973c22c4af991affc4751d03946583393014d6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 106,
+      "witnessItems": 4
+    },
+    {
+      "name": "CSV boundary: next block H+N accepted",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82"
+          ]
+        }
+      },
+      "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+      "transactionHex": "0200000000010121457d200adb502918f1d144e0f3605f2ccc85730106eb8e54ba7c3ed53cce4e00000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044029c9ed4a32de48967b07e57de5077c960e2cba51d4e6749f726508ccf4e04a091fc3f0f3c52ed1524a8dd6a80590a9b156104b2270c5597fda00d22993bd3aa740a4f2c363ba1ba5911d07ab5c624e2d2490b6ab6433ed3ebc609dd2bc31ff2be4fa6393766af020ed665cb11e777973c22c4af991affc4751d03946583393014d6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "R plus Swissquote is also allowed at the exact boundary",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "8e0a0f6d83fe1649baca17c5a9cb79e7613046ebc9ff6550cbc258475d09f0fd",
+        "wtxid": "e0fa69fb175b42033d610cbaff5c888ea47c0266d9fd42d9a6946accfcdf03f2",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "e0fa69fb175b42033d610cbaff5c888ea47c0266d9fd42d9a6946accfcdf03f2"
+          ]
+        }
+      },
+      "txid": "8e0a0f6d83fe1649baca17c5a9cb79e7613046ebc9ff6550cbc258475d09f0fd",
+      "transactionHex": "02000000000101018e983852ee7cdbe0127d7cf3aab677188f45dc34c3326a6516ed696fa2562500000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d054091d085c789255a565e9fe6d404b45368f47a3c59db1e75864a4780387f816fc1c33841d8bcfbabd3edd6b56a99c40e33b082b04dfb084df27cca6b4930ecba4800400b72b8a11161e1855d171e459841959b1446c964eea5d55778ff946d025155b6454f14d0b28f0af84a113dce5e088109e71f19ff3e58d9452e84ab8f7bf53e536a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [none], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0400006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [none], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d050000006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [R], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)",
+        "reject-details": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d040040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [R], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d05000040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [P], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf89006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [P], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d050000006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [R,P], P witness path",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca"
+          ]
+        }
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf8940aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [R,P], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d05000040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [SQ], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0400006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [SQ], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0540d8c0f399be93079726e53f875ffa326101d6ad9840dbd71a292bf042ffb1daf0a60e12c2637130b45cccdb338750928db212f1fac4384077c0399c8a1dc5e32600006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [R,SQ], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)",
+        "reject-details": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d040040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [R,SQ], SQ witness path",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e"
+          ]
+        }
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0540d8c0f399be93079726e53f875ffa326101d6ad9840dbd71a292bf042ffb1daf0a60e12c2637130b45cccdb338750928db212f1fac4384077c0399c8a1dc5e3260040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [P,SQ], P witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf89006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [P,SQ], SQ witness path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0540d8c0f399be93079726e53f875ffa326101d6ad9840dbd71a292bf042ffb1daf0a60e12c2637130b45cccdb338750928db212f1fac4384077c0399c8a1dc5e32600006a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Coalition [R,P,SQ], P witness path",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca"
+          ]
+        }
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf8940aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Coalition [R,P,SQ], SQ witness path",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e"
+          ]
+        }
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0540d8c0f399be93079726e53f875ffa326101d6ad9840dbd71a292bf042ffb1daf0a60e12c2637130b45cccdb338750928db212f1fac4384077c0399c8a1dc5e3260040aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 5
+    },
+    {
+      "name": "Recovery party R cannot use phone key path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "a92d9d74e65a7fc297b9a4878799bd8a39f5c51a782ecbdbe7da284d583e0c18",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid a92d9d74e65a7fc297b9a4878799bd8a39f5c51a782ecbdbe7da284d583e0c18), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd20100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014019fc5cdfbd488a170a1501e1e879238134a5e27ba34e208a5ee806453ea51520c9955e46d92e41d976a3281a70af8ffda24d641abd5eb39c84e878fa106fa02500000000",
+      "height": 107,
+      "witnessItems": 1
+    },
+    {
+      "name": "Recovery party P cannot use phone key path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "71aa484874ead712ba87f2819c55666dc2dc2ba1bd83c0c9df03c3691f9afc8c",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 71aa484874ead712ba87f2819c55666dc2dc2ba1bd83c0c9df03c3691f9afc8c), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd20100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014090240672a51190e6e3e14aaf93ca19a9c677b575b61483212a7efd044eb92acbbf253e3b2ff7608990ea09bf56950adb83530c226954680ed8af51af2adaec1900000000",
+      "height": 107,
+      "witnessItems": 1
+    },
+    {
+      "name": "Recovery party SQ cannot use phone key path",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "2ab43dab57ec4903d44937203eb584d255c1f304ebd365441238e467e27914db",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 2ab43dab57ec4903d44937203eb584d255c1f304ebd365441238e467e27914db), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd20100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014095aaf9540e839c5a5b2b8b95dbf898e5995b303cdbb8c47bef6be44fda7997585af168d02b36b6586999fd16770095c79d0d9cef6702e44e5fd9541b8dd9808c00000000",
+      "height": 107,
+      "witnessItems": 1
+    },
+    {
+      "name": "P plus SQ cannot substitute SQ signature for mandatory R",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "23f6f515763a1a194db85ea05fe8334eeee7c43828b67b8bb5e42146b47db8f6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 23f6f515763a1a194db85ea05fe8334eeee7c43828b67b8bb5e42146b47db8f6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf8940d8c0f399be93079726e53f875ffa326101d6ad9840dbd71a292bf042ffb1daf0a60e12c2637130b45cccdb338750928db212f1fac4384077c0399c8a1dc5e3266a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Forged mandatory-user signature also fails block validation",
+      "passed": true,
+      "blockRejection": {
+        "code": -25,
+        "message": "TestBlockValidity failed: mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 23f6f515763a1a194db85ea05fe8334eeee7c43828b67b8bb5e42146b47db8f6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "height": 107,
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7"
+    },
+    {
+      "name": "Sequence below script threshold",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "7edece7ad22162002ff85613ff3433a9706898734913b5243ef295ca64082301",
+        "wtxid": "131d1b2f8503e01d3153d833abb712bcdb85ee5bdfb5506c7813fb60c85ae911",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 7edece7ad22162002ff85613ff3433a9706898734913b5243ef295ca64082301 (wtxid 131d1b2f8503e01d3153d833abb712bcdb85ee5bdfb5506c7813fb60c85ae911), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "7edece7ad22162002ff85613ff3433a9706898734913b5243ef295ca64082301",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000500000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d044050ce30631fc99621acc08d49cbb6e6d91f48c6d13cac840f3b7c25d4b311b53ec486a58ce7fe56e949fcbb7f6f31d7e7b2796ebc8d4b56f33a815a1a07018c4e40af7dae9ffda7d451fc2ed7848a0a88cd04188573ebd64083ce947ed16d904923247d36b336c61a1bad13df0687b84fd24f3010a8748614d613b9c0d6090b0e1a6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Sequence disable flag cannot bypass script CSV",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "9afea6f14b5df5ba0e6b5255988f1492e4be9241d08c8cdff85e839f2ca0e518",
+        "wtxid": "92a071270eba9aca0f8e2cb24f79e116c5839c4bf1119d5216437719adaf9a1f",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 9afea6f14b5df5ba0e6b5255988f1492e4be9241d08c8cdff85e839f2ca0e518 (wtxid 92a071270eba9aca0f8e2cb24f79e116c5839c4bf1119d5216437719adaf9a1f), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "9afea6f14b5df5ba0e6b5255988f1492e4be9241d08c8cdff85e839f2ca0e518",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600008001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0440af96bac50553fa521c20fcf8c128398f68e90ab2b25ed12b72ff5cbb92284bca9f2cbd7f57c00c7b709a080645dff0faa527c21009ae1c43c5bd6afb4353da1a4050528febcdd4a95ed8c11b5dd92338918d1391b79ad0ccd7ede589758c52c83c0c2e5a2eeab47806d5893c12866fc1d07ea3eb6f50f4f2daa12717b772b91c016a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Final sequence cannot bypass script CSV",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "36802f5fdf7f64544ddf0f0a5a6036bfde165f2f65dc6f27ecc55dbdeb9bf45b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 36802f5fdf7f64544ddf0f0a5a6036bfde165f2f65dc6f27ecc55dbdeb9bf45b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd20100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0440dabfcf9e0a6a4cbd65383d1b2be5b6118282181c0c467e65d0bef02e6ee94d15e42b597d69f992a3f08e840a00512efb49ae2a4530281631b77c3e29215eacae403b14c5fa963041ca90f3ca77178148bfc0f9ce87a4768561e7868e68e1c632da86da146ed7a0fdaaac0352fa09120fd19a536dbb035602c0e13caa81af96b13b6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Time-based sequence cannot satisfy block-based CSV",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "c6fd96ab9f0be778cc1e308a0a59e6575f874f7c48fdb17c278504a7c0ce3461",
+        "wtxid": "bf014b5948df817b8a24e22dcf9be52f40ddbcb9543952e6da84c96cfe14f626",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of c6fd96ab9f0be778cc1e308a0a59e6575f874f7c48fdb17c278504a7c0ce3461 (wtxid bf014b5948df817b8a24e22dcf9be52f40ddbcb9543952e6da84c96cfe14f626), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "c6fd96ab9f0be778cc1e308a0a59e6575f874f7c48fdb17c278504a7c0ce3461",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000000400001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0440ab3014abc35b592d31019cfeee457ff0c7b5fbe06e6e6591ae03fdd1212cb1821bd22b35e6058a128fcfbd9736d141628f940df1e9fe9b6afa9055610cca1d44402e1fb420880120187edc2ef044e0b86e7d559a8b4c44b95ced5f71779b3ee5dae76923b44c2b0f97f1c49e26fe3d675d18050360325d7cf3adea103572706e146a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Transaction version one cannot bypass CSV",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "7406740758682469370ca077f66c3c6787e46e6c23ebd6bcd31f3247b8121c05",
+        "wtxid": "cec3113ec956e17ebaa87981df43a3eb962c9c2b36c6cec61031df8c3ae729ef",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 7406740758682469370ca077f66c3c6787e46e6c23ebd6bcd31f3247b8121c05 (wtxid cec3113ec956e17ebaa87981df43a3eb962c9c2b36c6cec61031df8c3ae729ef), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "7406740758682469370ca077f66c3c6787e46e6c23ebd6bcd31f3247b8121c05",
+      "transactionHex": "0100000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0440290338e9c27efd05a3c4df7c16183bbebb59c32beb4843b64afad8963016d473d77ca5e4df5d4661dd78ddfeb3acb6e1d77f3006184ccb96fa47bb743b465d92405f6e4bdbaef7b305164b74e37e60240ff1ead0ba24e64ed14e351ea24b9dcbdbeca17a074d3266bd534328baa95e1b4c3cbd53889e3863abe0c303433890f9146a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Destination substitution after user signature fails",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "e608848df4c5386058aab49e82ec205ffa12c240ab618883289d7d5ef669b716",
+        "wtxid": "b3700dac3c15b5250537f249ca47908f31777ef058a2c21398d9d1f33ab86ebd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of e608848df4c5386058aab49e82ec205ffa12c240ab618883289d7d5ef669b716 (wtxid b3700dac3c15b5250537f249ca47908f31777ef058a2c21398d9d1f33ab86ebd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "e608848df4c5386058aab49e82ec205ffa12c240ab618883289d7d5ef669b716",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120a851d42b3f61acc6971b277e8e3961de8658ab0097096a06d3ba8b77e5902097044014c6a761c066525f3cc3fc0ab444388be41b9ed5af27f55a594e0dc3cbd3fabf430803896bee8df1f7e4b739e3038bb23fb0cf5a656ae7fc02426d2024a6cf8940aaee4158b737d72fa103ea86a6e7c71be8b694842180dbb937b930c6a282fc8a9217134f166d3b98e1056d84359a607622b092bccffbfc61c7d9834f088a06a36a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 4
+    },
+    {
+      "name": "Deserialized phone key plus public tree metadata spends without recovery parties",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "8563917d5d70c2849643b290bb99f233196dadc8429f65db3270bf580f3323f3",
+        "wtxid": "b73095db87558d6ee3659fc7646f6d59ffc51ef6fb729fea82488c8e7f0d8f1a",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "b73095db87558d6ee3659fc7646f6d59ffc51ef6fb729fea82488c8e7f0d8f1a"
+          ]
+        }
+      },
+      "txid": "8563917d5d70c2849643b290bb99f233196dadc8429f65db3270bf580f3323f3",
+      "transactionHex": "02000000000101bbd8f823a0ebdf50d7c2be08d8c0e4b6fdb3a5ab0f482932c471ff84ddf3de0e0100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014042c2a8a737817e363676be4cb0ee8c944b98452b0fb8b3692466ed39774a380a95e1d7f8ebda00bcf8603a765d26a82e10b07c0befa80ce8df375bedfa5dbf3600000000",
+      "height": 107,
+      "witnessItems": 1
+    },
+    {
+      "name": "Replacing the committed leaf with partner-only script fails",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b7fe09fb2d0113dbd3156cf68847273648706683572c06072fcb851ebf730bfe",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Witness program hash mismatch)",
+        "reject-details": "mandatory-script-verify-flag-failed (Witness program hash mismatch), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b7fe09fb2d0113dbd3156cf68847273648706683572c06072fcb851ebf730bfe), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      },
+      "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+      "transactionHex": "0200000000010151215b42546ff1eea810d5e1b0caa84e3a370e0a74820ac7a1567e78c79e4bd201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0340ca10c6ceb4b3e8625f9c9171a68da01f881c6a24414f444c2071d9b04aa1b258737c2168e45bb25c1768414572863cb721227941f6b3629b8356a6e3a69115fc2220675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac21c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 107,
+      "witnessItems": 3
+    },
+    {
+      "name": "R plus partner recovery sweep actually mined",
+      "passed": true,
+      "txid": "a33fedebe2e616475128e5dce073168ca5718c4975de6d747abf83bccfc7d98f",
+      "blockhash": "09f6627f161a82c18b6dae852499e58847d85098879714e7e09fac2eea59ef20",
+      "height": 108
+    },
+    {
+      "name": "R plus Swissquote recovery sweep actually mined",
+      "passed": true,
+      "txid": "8e0a0f6d83fe1649baca17c5a9cb79e7613046ebc9ff6550cbc258475d09f0fd",
+      "blockhash": "0acbfbcf3208ca96f901cc6e6aaee8407f32fd60c82689dc01d08270b11f0ade",
+      "height": 109
+    },
+    {
+      "name": "Old phone key fails on migrated output",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+        "wtxid": "697de535f1fe6cc9352200d4df7618b8ec4d7e6248958faeb3c0ba05855d4686",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of 8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be (wtxid 697de535f1fe6cc9352200d4df7618b8ec4d7e6248958faeb3c0ba05855d4686), spending a33fedebe2e616475128e5dce073168ca5718c4975de6d747abf83bccfc7d98f:0"
+      },
+      "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+      "transactionHex": "020000000001018fd9c7cfbc83bf7a746dde75498c71a58c1673e0dce528514716e6e2ebed3fa30000000000ffffffff01a0320f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014019914afeef40b5d728328e2a5d604109031c9c91300606fc9df0f9c6c1d4afa71b4a78a1e350c2e32476da224de2edb611bc71da3863f3bb58f221a8a2b1208000000000",
+      "height": 109,
+      "witnessItems": 1
+    },
+    {
+      "name": "New phone key succeeds on migrated output",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+        "wtxid": "bf2475d5b330aa9f9be6a1f87293f9ba23e3c7559d355fb4c39fe518ed31c9ed",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "bf2475d5b330aa9f9be6a1f87293f9ba23e3c7559d355fb4c39fe518ed31c9ed"
+          ]
+        }
+      },
+      "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+      "transactionHex": "020000000001018fd9c7cfbc83bf7a746dde75498c71a58c1673e0dce528514716e6e2ebed3fa30000000000ffffffff01a0320f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0140d316da0c1e1623b4a06fe978a64e38c327a9f0a15da19d86eeb72789c03057fac486b2dd5a6dca799ca7d944cb2441b427a1c245801001c3bb48d20a97189ad700000000",
+      "height": 109,
+      "witnessItems": 1
+    },
+    {
+      "name": "New phone-only spend of recovered output actually mined",
+      "passed": true,
+      "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+      "blockhash": "799d583ef4df917442aa1e56405f1cba18ff25afc9a8a1229bdd5b0e1d00c443",
+      "height": 110
+    },
+    {
+      "name": "Recovery consumes the original UTXO; it does not rewrite its address",
+      "passed": true,
+      "spentOutpoint": "4ece3cd53e7cba548eeb06017385cc2c5f60f3e044d1f1182950db0a207d4521:0"
+    },
+    {
+      "name": "Already-old output has immediate recovery eligibility without a recovery request",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+        "wtxid": "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4"
+          ]
+        }
+      },
+      "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+      "transactionHex": "02000000000101004e4c5acad4cbf3fdbecde3a0fbb22029ed2ecb9bea63e26f9c09f86aea050201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d04407855ce9d72708a2384fed8d216eb5ad511521a981c52dd7ee0b43b663d5ff7ee586a9b4f6b2193bb1cde2b2cdefef28a0d5d0259784196ca17e658bbaf47e73940eb6c8b80980dacfd7a0091714f3fe8bc4ed556c6cabc54ae157bc78188f032d2c02ec8ad0ab5525d9f60c187ac3a148d1033cc271fdc9c9545793029205f33326a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 118,
+      "witnessItems": 4
+    },
+    {
+      "name": "Fresh deposit to the same address has its own new delay",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "8499331d371abd0d5f3282111899654c478e68c7f21142ed13eb99ee9810e60c",
+        "wtxid": "1f7b6e860c62b5453d198f05d202be43f68f2c2dee0cfd888314f5cffd9d8545",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      },
+      "txid": "8499331d371abd0d5f3282111899654c478e68c7f21142ed13eb99ee9810e60c",
+      "transactionHex": "02000000000101cb94235abbe9290c2edc2466dabaf364be75612dc1ba8f67912b0d6b300f723900000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d04400e1c5e1f8f8f84fb50afc0f603fb5c66459b2b08f930fe7f131d6fbc3af37b907ce570c3cea3ec311a5fe1a84cf1497c8e0a2f2973f1ac89fdd9097c2892862e40d043111a2531361d42d70dfe2731cc0319f8766398a74d9d80290a960c45f16d16960a19a8c8ad38d0277625c629c0d5e83fd4920498ce9ee8e55da3c48e5ade6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 119,
+      "witnessItems": 4
+    },
+    {
+      "name": "Old phone key still spends future deposits to the original address",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "e37619d22d3814e5f8b9337e4f580c982e54943cdeca8e05dbb9627bfca22093",
+        "wtxid": "d86b8bcc1961c222dc2fe94d2d2715be627d62ff5be468d3ee17ea5d9f5d4707",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "d86b8bcc1961c222dc2fe94d2d2715be627d62ff5be468d3ee17ea5d9f5d4707"
+          ]
+        }
+      },
+      "txid": "e37619d22d3814e5f8b9337e4f580c982e54943cdeca8e05dbb9627bfca22093",
+      "transactionHex": "02000000000101cb94235abbe9290c2edc2466dabaf364be75612dc1ba8f67912b0d6b300f72390000000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d01403c2ffa503ddb68623a14da0d5039e9639fccc00175811be22fad3f44236096031965580f06d68a3241ea4a0248d85d683ed8197fb0069f23494edf80e1dc4d8800000000",
+      "height": 119,
+      "witnessItems": 1
+    },
+    {
+      "name": "Old deposit remains eligible despite fresh deposit to the same address",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+        "wtxid": "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4"
+          ]
+        }
+      },
+      "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+      "transactionHex": "02000000000101004e4c5acad4cbf3fdbecde3a0fbb22029ed2ecb9bea63e26f9c09f86aea050201000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d04407855ce9d72708a2384fed8d216eb5ad511521a981c52dd7ee0b43b663d5ff7ee586a9b4f6b2193bb1cde2b2cdefef28a0d5d0259784196ca17e658bbaf47e73940eb6c8b80980dacfd7a0091714f3fe8bc4ed556c6cabc54ae157bc78188f032d2c02ec8ad0ab5525d9f60c187ac3a148d1033cc271fdc9c9545793029205f33326a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 119,
+      "witnessItems": 4
+    },
+    {
+      "name": "Mature recovery transaction valid before conflicting phone spend",
+      "passed": true,
+      "expectedAllowed": true,
+      "mempool": {
+        "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+        "wtxid": "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13"
+          ]
+        }
+      },
+      "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+      "transactionHex": "020000000001017f2a41ac342dd1aceec9516cb2b2a202fc92741e28dd83e7ae13996667b9815001000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d04406a1703b5ca651878d452d05beb1904750cbe1204a1dc91e3bfd7b1e2e97fc3a90424ec3f7ce40305f86f2b006e4f177a7eac14da892b60456b91b6d48c7f97984096480f602c546393070f9411a83178e068800cdd92bc4994848a7eaacdd9d4d0dbe71201574a1db3e6ade31901546f66a2a0485799df6afb9ca77c85f5eb27536a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 119,
+      "witnessItems": 4
+    },
+    {
+      "name": "Competing phone-key spend wins when mined first",
+      "passed": true,
+      "txid": "9f8a6866816f7772f108c8d544dfc1e3ed7248f16729639061a7aecf53fbaf89",
+      "blockhash": "4ea8b5c119541f1b8049cb72a8b1e83bb5c39f0525582db95b3c0a6d545d3d3e",
+      "height": 120
+    },
+    {
+      "name": "Recovery cannot reverse a confirmed conflicting phone-key spend",
+      "passed": true,
+      "expectedAllowed": false,
+      "mempool": {
+        "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+        "wtxid": "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13",
+        "allowed": false,
+        "reject-reason": "missing-inputs"
+      },
+      "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+      "transactionHex": "020000000001017f2a41ac342dd1aceec9516cb2b2a202fc92741e28dd83e7ae13996667b9815001000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d04406a1703b5ca651878d452d05beb1904750cbe1204a1dc91e3bfd7b1e2e97fc3a90424ec3f7ce40305f86f2b006e4f177a7eac14da892b60456b91b6d48c7f97984096480f602c546393070f9411a83178e068800cdd92bc4994848a7eaacdd9d4d0dbe71201574a1db3e6ade31901546f66a2a0485799df6afb9ca77c85f5eb27536a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000",
+      "height": 120,
+      "witnessItems": 4
+    }
+  ],
+  "minedTransactions": [
+    {
+      "name": "Phone-only key-path spend actually mined",
+      "txid": "96a5cf0282d86eb145243a5807f7e3f5f32858f1ae14f631c5398a338a11229d",
+      "blockhash": "5b54d9afd3db2afcb535ec11b6bb5220a63143540a2c9a1c72c86db2d3aa8e49",
+      "height": 103,
+      "transactionHex": "02000000000101b96455f6cafbf0065dabee15f8bc8d38794c3e657c75f965615dd648f2c603990100000000ffffffff01703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d014065615ef4a057fc58e245500ef6030c6da9dba10a86f83982237b87f00ef61384cd768ebb760a06582db22b1ffed9011b2ed61c508a3788eafbdb2b4959f9679c00000000"
+    },
+    {
+      "name": "R plus partner recovery sweep actually mined",
+      "txid": "a33fedebe2e616475128e5dce073168ca5718c4975de6d747abf83bccfc7d98f",
+      "blockhash": "09f6627f161a82c18b6dae852499e58847d85098879714e7e09fac2eea59ef20",
+      "height": 108,
+      "transactionHex": "0200000000010121457d200adb502918f1d144e0f3605f2ccc85730106eb8e54ba7c3ed53cce4e00000000000600000001703a0f00000000002251209d45beb626059237b6ee35d81ee747e995c4d20805847d27166f6f322ea306dd04403fcb9e8c715be7545b5cd935fcdffb489461ecd5e22bb94e8afc64c906a6c80051bbb89353d4faeb9aa1bac88f269addd2020630363b0a87ba0896c2d325fb25402d11912f53313871d95697eb35644e07ff137221cb89d144b285bc1ea9caec35f4ca0ae18d0c8739dec3170d926c47962576fae95213b3f7106cf2ee97b4e7eb6a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000"
+    },
+    {
+      "name": "R plus Swissquote recovery sweep actually mined",
+      "txid": "8e0a0f6d83fe1649baca17c5a9cb79e7613046ebc9ff6550cbc258475d09f0fd",
+      "blockhash": "0acbfbcf3208ca96f901cc6e6aaee8407f32fd60c82689dc01d08270b11f0ade",
+      "height": 109,
+      "transactionHex": "02000000000101018e983852ee7cdbe0127d7cf3aab677188f45dc34c3326a6516ed696fa2562500000000000600000001703a0f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d054091d085c789255a565e9fe6d404b45368f47a3c59db1e75864a4780387f816fc1c33841d8bcfbabd3edd6b56a99c40e33b082b04dfb084df27cca6b4930ecba4800400b72b8a11161e1855d171e459841959b1446c964eea5d55778ff946d025155b6454f14d0b28f0af84a113dce5e088109e71f19ff3e58d9452e84ab8f7bf53e536a20de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaaad20675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76ac6420741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07ad6856b221c0d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b5000000000"
+    },
+    {
+      "name": "New phone-only spend of recovered output actually mined",
+      "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+      "blockhash": "799d583ef4df917442aa1e56405f1cba18ff25afc9a8a1229bdd5b0e1d00c443",
+      "height": 110,
+      "transactionHex": "020000000001018fd9c7cfbc83bf7a746dde75498c71a58c1673e0dce528514716e6e2ebed3fa30000000000ffffffff01a0320f0000000000225120dc373f8cb697b748e9894e75ff52cd9e1144abd043f36eac66effe946a94874d0140d316da0c1e1623b4a06fe978a64e38c327a9f0a15da19d86eeb72789c03057fac486b2dd5a6dca799ca7d944cb2441b427a1c245801001c3bb48d20a97189ad700000000"
+    },
+    {
+      "name": "Competing phone-key spend wins when mined first",
+      "txid": "9f8a6866816f7772f108c8d544dfc1e3ed7248f16729639061a7aecf53fbaf89",
+      "blockhash": "4ea8b5c119541f1b8049cb72a8b1e83bb5c39f0525582db95b3c0a6d545d3d3e",
+      "height": 120,
+      "transactionHex": "020000000001017f2a41ac342dd1aceec9516cb2b2a202fc92741e28dd83e7ae13996667b981500100000000ffffffff01703a0f0000000000225120a851d42b3f61acc6971b277e8e3961de8658ab0097096a06d3ba8b77e59020970140e978dad4c82d81a56ea30b47abd9eb5220b37ad7947b8edcb45df6b46fdd5556b2490beeeb233cd65126c3947439a9219111805d4f494bc988cae7ecd7f8bc3500000000"
+    }
+  ],
+  "nodeArguments": [
+    "-regtest",
+    "-server=1",
+    "-listen=0",
+    "-networkactive=0",
+    "-dnsseed=0",
+    "-discover=0",
+    "-listenonion=0",
+    "-rpcbind=127.0.0.1",
+    "-rpcallowip=127.0.0.1",
+    "-rpcport=44161",
+    "-datadir=/home/dev/Hackaton/SwissquoteTrack/AgentsLocal/4ccb895d/bitcoin-regtest/run-2I79Pm/node",
+    "-fallbackfee=0.0002",
+    "-txindex=1",
+    "-persistmempool=0",
+    "-printtoconsole=1"
+  ],
+  "coreVersion": {
+    "version": 290000,
+    "subversion": "/Satoshi:29.0.0/",
+    "protocolversion": 70016,
+    "localservices": "0000000000000c09",
+    "localservicesnames": [
+      "NETWORK",
+      "WITNESS",
+      "NETWORK_LIMITED",
+      "P2P_V2"
+    ],
+    "localrelay": true,
+    "timeoffset": 0,
+    "networkactive": false,
+    "connections": 0,
+    "connections_in": 0,
+    "connections_out": 0,
+    "networks": [
+      {
+        "name": "ipv4",
+        "limited": false,
+        "reachable": true,
+        "proxy": "",
+        "proxy_randomize_credentials": false
+      },
+      {
+        "name": "ipv6",
+        "limited": false,
+        "reachable": true,
+        "proxy": "",
+        "proxy_randomize_credentials": false
+      },
+      {
+        "name": "onion",
+        "limited": true,
+        "reachable": false,
+        "proxy": "",
+        "proxy_randomize_credentials": false
+      },
+      {
+        "name": "i2p",
+        "limited": true,
+        "reachable": false,
+        "proxy": "",
+        "proxy_randomize_credentials": false
+      },
+      {
+        "name": "cjdns",
+        "limited": true,
+        "reachable": false,
+        "proxy": "",
+        "proxy_randomize_credentials": false
+      }
+    ],
+    "relayfee": 0.00001,
+    "incrementalfee": 0.00001,
+    "localaddresses": [],
+    "warnings": []
+  },
+  "descriptorInfo": {
+    "descriptor": "tr(d1113ede1c9643bc4b6c9ab1c34ef960270b91818541fc2a90db9ce230f82b50,and_v(v:pk(de00074657650749c56fb9219214673417d0a282726f6bebc4086a14422b4eaa),and_v(or_c(pk(675fd46b6f7c487037f3a82ba8b675674e59bd9e1bfeb2c614c4d086fae84b76),v:pk(741f507487a6ce37b5c866b0839e4af2ba5d726104982888d219370433be7c07)),older(6))))#7kzxn4wy",
+    "checksum": "7kzxn4wy",
+    "isrange": false,
+    "issolvable": true,
+    "hasprivatekeys": false
+  },
+  "fundingHeight": 102,
+  "probes": [
+    {
+      "name": "Recovery before CSV age fails mempool validation",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      }
+    },
+    {
+      "name": "Phone key path works immediately with final sequence",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "96a5cf0282d86eb145243a5807f7e3f5f32858f1ae14f631c5398a338a11229d",
+        "wtxid": "f2f2c6ec931f94bcd247799ac0668e22dcff755af6311988a69a08db7e557ca5",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "f2f2c6ec931f94bcd247799ac0668e22dcff755af6311988a69a08db7e557ca5"
+          ]
+        }
+      }
+    },
+    {
+      "name": "CSV boundary: next block H+N-1 rejected",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      }
+    },
+    {
+      "name": "CSV boundary: next block H+N accepted",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "ff765d0feeb43b9d69935c46f58b5059da9aa69369a3adbc18b64c6aea0054d7",
+        "wtxid": "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "71ea214a2670db7fdc77ed4f6084b4a03770d70dbc15fb3481a74d0fded7fa82"
+          ]
+        }
+      }
+    },
+    {
+      "name": "R plus Swissquote is also allowed at the exact boundary",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "8e0a0f6d83fe1649baca17c5a9cb79e7613046ebc9ff6550cbc258475d09f0fd",
+        "wtxid": "e0fa69fb175b42033d610cbaff5c888ea47c0266d9fd42d9a6946accfcdf03f2",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "e0fa69fb175b42033d610cbaff5c888ea47c0266d9fd42d9a6946accfcdf03f2"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Coalition [none], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [none], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)",
+        "reject-details": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [P], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [P], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 095e78ba6735e8bd425af345f41117290fc254f26c70a78e103489a14b1c583d), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R,P], P witness path",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Coalition [R,P], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 43646c579b0bab4cc3d49c07d7d295b0d8ea18d1a2f3d47d506099762a3b2d8b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [SQ], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid d925acbbd2f561ea76d0031f64f20a1c5d138ca15a93d5dee2d5252d8c17813b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [SQ], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R,SQ], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size)",
+        "reject-details": "mandatory-script-verify-flag-failed (Operation not valid with the current stack size), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid f22eb6cf08cd5f0de414ff7e5b6f51cfc8a1764b53bceb2c4842c76b90602f78), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R,SQ], SQ witness path",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Coalition [P,SQ], P witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 89f359b7ef09d5bcb8c221cd488bc3c0c33a7f8c3dbb4a872d8e163ec858ddb6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [P,SQ], SQ witness path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation)",
+        "reject-details": "mandatory-script-verify-flag-failed (Script failed an OP_CHECKSIGVERIFY operation), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b765349244f3e4d5867d23724ccac389bfabf164a77893063a2d6f5c31b43cfd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Coalition [R,P,SQ], P witness path",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "ac40366e503a8a812e009fbffefb2253838c95e67d350fe64dd02282997fe7ca"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Coalition [R,P,SQ], SQ witness path",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "9e50fea7b3c877f7467f75af02cbd06f6f072440c1d93a7bd6f872534637dd7e"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recovery party R cannot use phone key path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "a92d9d74e65a7fc297b9a4878799bd8a39f5c51a782ecbdbe7da284d583e0c18",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid a92d9d74e65a7fc297b9a4878799bd8a39f5c51a782ecbdbe7da284d583e0c18), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Recovery party P cannot use phone key path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "71aa484874ead712ba87f2819c55666dc2dc2ba1bd83c0c9df03c3691f9afc8c",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 71aa484874ead712ba87f2819c55666dc2dc2ba1bd83c0c9df03c3691f9afc8c), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Recovery party SQ cannot use phone key path",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "2ab43dab57ec4903d44937203eb584d255c1f304ebd365441238e467e27914db",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 2ab43dab57ec4903d44937203eb584d255c1f304ebd365441238e467e27914db), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "P plus SQ cannot substitute SQ signature for mandatory R",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "23f6f515763a1a194db85ea05fe8334eeee7c43828b67b8bb5e42146b47db8f6",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid 23f6f515763a1a194db85ea05fe8334eeee7c43828b67b8bb5e42146b47db8f6), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Sequence below script threshold",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "7edece7ad22162002ff85613ff3433a9706898734913b5243ef295ca64082301",
+        "wtxid": "131d1b2f8503e01d3153d833abb712bcdb85ee5bdfb5506c7813fb60c85ae911",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 7edece7ad22162002ff85613ff3433a9706898734913b5243ef295ca64082301 (wtxid 131d1b2f8503e01d3153d833abb712bcdb85ee5bdfb5506c7813fb60c85ae911), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Sequence disable flag cannot bypass script CSV",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "9afea6f14b5df5ba0e6b5255988f1492e4be9241d08c8cdff85e839f2ca0e518",
+        "wtxid": "92a071270eba9aca0f8e2cb24f79e116c5839c4bf1119d5216437719adaf9a1f",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 9afea6f14b5df5ba0e6b5255988f1492e4be9241d08c8cdff85e839f2ca0e518 (wtxid 92a071270eba9aca0f8e2cb24f79e116c5839c4bf1119d5216437719adaf9a1f), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Final sequence cannot bypass script CSV",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205",
+        "wtxid": "36802f5fdf7f64544ddf0f0a5a6036bfde165f2f65dc6f27ecc55dbdeb9bf45b",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of a3c645b7d5d309b0d0e54ead25c0b5dc7e115df9538593fd740ae91dc9489205 (wtxid 36802f5fdf7f64544ddf0f0a5a6036bfde165f2f65dc6f27ecc55dbdeb9bf45b), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Time-based sequence cannot satisfy block-based CSV",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "c6fd96ab9f0be778cc1e308a0a59e6575f874f7c48fdb17c278504a7c0ce3461",
+        "wtxid": "bf014b5948df817b8a24e22dcf9be52f40ddbcb9543952e6da84c96cfe14f626",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of c6fd96ab9f0be778cc1e308a0a59e6575f874f7c48fdb17c278504a7c0ce3461 (wtxid bf014b5948df817b8a24e22dcf9be52f40ddbcb9543952e6da84c96cfe14f626), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Transaction version one cannot bypass CSV",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "7406740758682469370ca077f66c3c6787e46e6c23ebd6bcd31f3247b8121c05",
+        "wtxid": "cec3113ec956e17ebaa87981df43a3eb962c9c2b36c6cec61031df8c3ae729ef",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied)",
+        "reject-details": "mandatory-script-verify-flag-failed (Locktime requirement not satisfied), input 0 of 7406740758682469370ca077f66c3c6787e46e6c23ebd6bcd31f3247b8121c05 (wtxid cec3113ec956e17ebaa87981df43a3eb962c9c2b36c6cec61031df8c3ae729ef), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Destination substitution after user signature fails",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "e608848df4c5386058aab49e82ec205ffa12c240ab618883289d7d5ef669b716",
+        "wtxid": "b3700dac3c15b5250537f249ca47908f31777ef058a2c21398d9d1f33ab86ebd",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of e608848df4c5386058aab49e82ec205ffa12c240ab618883289d7d5ef669b716 (wtxid b3700dac3c15b5250537f249ca47908f31777ef058a2c21398d9d1f33ab86ebd), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Deserialized phone key plus public tree metadata spends without recovery parties",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "8563917d5d70c2849643b290bb99f233196dadc8429f65db3270bf580f3323f3",
+        "wtxid": "b73095db87558d6ee3659fc7646f6d59ffc51ef6fb729fea82488c8e7f0d8f1a",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "b73095db87558d6ee3659fc7646f6d59ffc51ef6fb729fea82488c8e7f0d8f1a"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Replacing the committed leaf with partner-only script fails",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7",
+        "wtxid": "b7fe09fb2d0113dbd3156cf68847273648706683572c06072fcb851ebf730bfe",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Witness program hash mismatch)",
+        "reject-details": "mandatory-script-verify-flag-failed (Witness program hash mismatch), input 0 of df3db979167b5356c210c4997821827ec3ae144671769381ade773a130e3a3e7 (wtxid b7fe09fb2d0113dbd3156cf68847273648706683572c06072fcb851ebf730bfe), spending d24b9ec7787e56a1c70a82740a0e373a4ea8cab0e1d510a8eef16f54425b2151:1"
+      }
+    },
+    {
+      "name": "Old phone key fails on migrated output",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+        "wtxid": "697de535f1fe6cc9352200d4df7618b8ec4d7e6248958faeb3c0ba05855d4686",
+        "allowed": false,
+        "reject-reason": "mandatory-script-verify-flag-failed (Invalid Schnorr signature)",
+        "reject-details": "mandatory-script-verify-flag-failed (Invalid Schnorr signature), input 0 of 8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be (wtxid 697de535f1fe6cc9352200d4df7618b8ec4d7e6248958faeb3c0ba05855d4686), spending a33fedebe2e616475128e5dce073168ca5718c4975de6d747abf83bccfc7d98f:0"
+      }
+    },
+    {
+      "name": "New phone key succeeds on migrated output",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "8c03604e3deccf4e765f27802ad784fe4afa5240d101a821778ddca2fbd839be",
+        "wtxid": "bf2475d5b330aa9f9be6a1f87293f9ba23e3c7559d355fb4c39fe518ed31c9ed",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "bf2475d5b330aa9f9be6a1f87293f9ba23e3c7559d355fb4c39fe518ed31c9ed"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Already-old output has immediate recovery eligibility without a recovery request",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+        "wtxid": "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Fresh deposit to the same address has its own new delay",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "8499331d371abd0d5f3282111899654c478e68c7f21142ed13eb99ee9810e60c",
+        "wtxid": "1f7b6e860c62b5453d198f05d202be43f68f2c2dee0cfd888314f5cffd9d8545",
+        "allowed": false,
+        "reject-reason": "non-BIP68-final",
+        "reject-details": "non-BIP68-final"
+      }
+    },
+    {
+      "name": "Old phone key still spends future deposits to the original address",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "e37619d22d3814e5f8b9337e4f580c982e54943cdeca8e05dbb9627bfca22093",
+        "wtxid": "d86b8bcc1961c222dc2fe94d2d2715be627d62ff5be468d3ee17ea5d9f5d4707",
+        "allowed": true,
+        "vsize": 111,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00018018,
+          "effective-includes": [
+            "d86b8bcc1961c222dc2fe94d2d2715be627d62ff5be468d3ee17ea5d9f5d4707"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Old deposit remains eligible despite fresh deposit to the same address",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "828eb8d636cbd92ffed86a6d5fea66626b28d4bb6fb41d04eb6d985565234532",
+        "wtxid": "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "73142b4c4810c276d85cecd7cf807f7ac352a6826f1b36b02ffa125ba21ad3d4"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Mature recovery transaction valid before conflicting phone spend",
+      "expectedAllowed": true,
+      "result": {
+        "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+        "wtxid": "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13",
+        "allowed": true,
+        "vsize": 163,
+        "fees": {
+          "base": 0.00002,
+          "effective-feerate": 0.00012269,
+          "effective-includes": [
+            "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Recovery cannot reverse a confirmed conflicting phone-key spend",
+      "expectedAllowed": false,
+      "result": {
+        "txid": "92860bade2940b0b4b4fee16a36d07b15140a28507c0ebbcf32d203199b0df52",
+        "wtxid": "d48f766896ed7b1269ad477185032f4b94f2a416987585b968f1d5837dfd1c13",
+        "allowed": false,
+        "reject-reason": "missing-inputs"
+      }
+    }
+  ],
+  "completed": "2026-10-10T13:41:29.877Z",
+  "summary": {
+    "passed": 54,
+    "minedTransactions": 5,
+    "finalHeight": 120,
+    "conclusion": "Authorization works; CSV is UTXO age, not a request-started cancellable timer; recovery migrates funds; SQ signs the recovery spending transaction."
+  },
+  "nodeStopped": true,
+  "success": true
+}

@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "ok": false,
+  "command": "finalize",
+  "status": "skipped",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.candidate.json",
+    "sha256": "b19493f9abdb1ffc84d279863080ca20babdb74838c22e345cd8dba85f7d0c81",
+    "bytes": 2718
+  },
+  "artifact": {
+    "path": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.html",
+    "sha256": "371c8c075d5135dcb7ef23f24c6ad571a763d59ba0f8d6927abd8fab6a66d6e3",
+    "bytes": 756974
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "skipped"
+  },
+  "failedStage": "browser-check",
+  "diagnostics": [
+    {
+      "code": "viewer/chrome-unavailable",
+      "severity": "warning",
+      "message": "Chrome or Chromium is unavailable. Set ARCHIFY_CHROME to its executable path.",
+      "subject": {
+        "artifact": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.html"
+      },
+      "evidence": {
+        "executable": null
+      },
+      "supportedFixes": [
+        "set ARCHIFY_CHROME to a Chrome or Chromium executable and rerun browser-check"
+      ]
+    }
+  ],
+  "diagnosticSummary": {
+    "total": 1,
+    "shown": 1,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.finalize.json",
+    "summaryReceipt": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.finalize-summary.json",
+    "browserCheckReceipt": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.browser-check.json"
+  },
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "cache-unavailable"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 506
+}

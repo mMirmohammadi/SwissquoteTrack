@@ -1,0 +1,405 @@
+
+
+  Candidate B on a local chain (Safe v1.4.1 + Candide SocialRecoveryModule)
+      evidence: safe runtime keccak256 0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4 canonical 0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4 -> MATCH
+      evidence: safe_proxy_factory runtime keccak256 0x50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317 canonical 0x50c3cdc4074750a7a974204a716c999edd37482f907608d960b2b025ee0b3317 -> MATCH
+      evidence: compatibility_fallback_handler runtime keccak256 0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9 canonical 0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9 -> MATCH
+      evidence: offline EIP-712 recovery hash == module.getRecoveryHash -> 0x016f7578837fabd5da08d5784c9b73377d5d9584c69b53760895778ff993a14f
+    ✔ T0 setup: canonical Safe v1.4.1 bytecode; W, X and WA configured as described
+      evidence: multiConfirmRecovery(W,[newKey],1,[R sig, X sig by P],execute=false) by relayer -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: finalizeRecovery(W) right after execute -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter-1 (t=1791640987) -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter (t=1791640988) by an unrelated relayer -> succeeded
+      evidence: W.getOwners() = [newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522], threshold 1, address unchanged true
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+    ✔ T2 R + X(P only) via signatures: execute -> wait -> finalize -> W owned by newKey only (68ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: finalizeRecovery(W) right after execute -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter-1 (t=1791640988) -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter (t=1791640989) by an unrelated relayer -> succeeded
+      evidence: W.getOwners() = [newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522], threshold 1, address unchanged true
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+    ✔ T2 R + X(P only) via on-chain confirmations: execute -> wait -> finalize -> W owned by newKey only (58ms)
+      evidence: multiConfirmRecovery(W,[newKey],1,[R sig, X sig by SQ],execute=false) by relayer -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: finalizeRecovery(W) right after execute -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter-1 (t=1791640987) -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter (t=1791640988) by an unrelated relayer -> succeeded
+      evidence: W.getOwners() = [newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522], threshold 1, address unchanged true
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+    ✔ T3 R + X(SQ only) via signatures: execute -> wait -> finalize -> W owned by newKey only (52ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed SQ] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: finalizeRecovery(W) right after execute -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter-1 (t=1791640988) -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at executeAfter (t=1791640989) by an unrelated relayer -> succeeded
+      evidence: W.getOwners() = [newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522], threshold 1, address unchanged true
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+    ✔ T3 R + X(SQ only) via on-chain confirmations: execute -> wait -> finalize -> W owned by newKey only (58ms)
+      evidence: executeRecovery(W,[newKey],1) -> succeeded
+      evidence: P calls cancelRecovery() directly -> reverted "SM: no ongoing recovery"
+      evidence: SQ calls cancelRecovery() directly -> reverted "SM: no ongoing recovery"
+      evidence: R calls cancelRecovery() directly -> reverted "SM: no ongoing recovery"
+      evidence: X.execTransaction[signed P] -> cancelRecovery() -> reverted "GS013"
+      evidence: W.execTransaction[signed Ph] -> module.cancelRecovery() during the wait -> succeeded
+      evidence: finalizeRecovery(W) after the period -> reverted "SM: no ongoing recovery"
+      evidence: executeRecovery(W,[newKey],1) again with the old confirmations -> reverted "SM: confirmed signatures less than threshold"
+    ✔ T4 owner cancels during the wait -> finalizeRecovery reverts 'SM: no ongoing recovery' (49ms)
+      evidence: [control, Candidate A] multiConfirmRecovery(WA,[attacker],1,[P,SQ],execute=true) -> succeeded
+      evidence: [control, Candidate A] finalizeRecovery(WA) -> succeeded
+      evidence: [control] under Candidate A, P+SQ replaced the owner: WA.getOwners() = [attacker]
+      evidence: WA.execTransaction[signed Ph] -> module.addGuardianWithThreshold(R,2) -> succeeded
+      evidence: WA.execTransaction[signed Ph] -> module.addGuardianWithThreshold(X,2) -> succeeded
+      evidence: WA.execTransaction[signed Ph] -> module.revokeGuardianWithThreshold(prev,P,2) -> succeeded
+      evidence: WA.execTransaction[signed Ph] -> module.revokeGuardianWithThreshold(prev,SQ,2) -> succeeded
+      evidence: WA.execTransaction[signed Ph] -> module.invalidateNonce() -> succeeded
+      evidence: same address 0x9931aa603E724de758Ef613A66f63EE4bf468bF2, same code and singleton; guardians now {R, X}, threshold 2, nonce 0 -> 1
+      evidence: executeRecovery(WA,[attacker],1) relying on P's pre-switch approval -> reverted "SM: confirmed signatures less than threshold"
+      evidence: multiConfirmRecovery(WA,[attacker],1,[SQ's pre-switch signature]) -> reverted "SM: Signer not a guardian"
+      evidence: multiConfirmRecovery(WA,[attacker],1,[P,SQ] fresh signatures at the new nonce) -> reverted "SM: Signer not a guardian"
+      evidence: P calls confirmRecovery(WA,...) directly -> reverted "SM: sender not a guardian"
+      evidence: executeRecovery(WA,[attacker],1) after X(P+SQ) confirmed -> reverted "SM: confirmed signatures less than threshold"
+      evidence: executeRecovery(WA,[newKey],1) with R + X(SQ) -> succeeded
+      evidence: finalizeRecovery(WA) -> succeeded
+    ✔ T5 A -> B at the same address: owner swaps guardians {P,SQ} -> {R,X}, invalidates nonce; A-style approvals die (159ms)
+    T1 P and SQ collude (every non-user party) -> recovery impossible
+      evidence: X.execTransaction[signed P] -> module.confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: X.execTransaction[signed SQ] -> module.confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: X.execTransaction[signed P+SQ] -> module.confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: getRecoveryApprovals(W,[attacker],1) = 1 (threshold 2)
+      evidence: X.execTransaction[signed P+SQ] -> confirmRecovery(...,execute=true) -> reverted "GS013"
+      evidence: eth_call from X: confirmRecovery(W,[attacker],1,true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: executeRecovery(W,[attacker],1) sent by attacker -> reverted "SM: confirmed signatures less than threshold"
+      evidence: executeRecovery(W,[attacker],1) sent by P -> reverted "SM: confirmed signatures less than threshold"
+      evidence: executeRecovery(W,[attacker],1) sent by SQ -> reverted "SM: confirmed signatures less than threshold"
+      evidence: executeRecovery(W,[attacker],1) sent by relayer -> reverted "SM: confirmed signatures less than threshold"
+      ✔ T1a X confirms through its own execTransaction (signed by P, then by SQ); executeRecovery still reverts (54ms)
+      evidence: X.isValidSignature(recoveryHash, sig by P / by SQ) = 0x1626ba7e (valid EIP-1271)
+      evidence: multiConfirmRecovery(W,[attacker],1,[X:sig by P],execute=true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: multiConfirmRecovery(W,[attacker],1,[X:sig by SQ],execute=true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: multiConfirmRecovery(W,[attacker],1,[X:sig by P],execute=false) -> succeeded
+      evidence: multiConfirmRecovery(W,[attacker],1,[X:sig by SQ],execute=false) -> succeeded
+      evidence: X.execTransaction[signed SQ] -> confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: getRecoveryApprovals(W,[attacker],1) = 1 after X confirmed by signature (x2) and on-chain
+      evidence: executeRecovery(W,[attacker],1) -> reverted "SM: confirmed signatures less than threshold"
+      ✔ T1b X confirms through an EIP-1271 signature in multiConfirmRecovery (P-signed or SQ-signed); still reverts (51ms)
+      evidence: P calls confirmRecovery(W,[attacker],1,false) -> reverted "SM: sender not a guardian"
+      evidence: SQ calls confirmRecovery(W,[attacker],1,true) -> reverted "SM: sender not a guardian"
+      evidence: multiConfirmRecovery([P: P's EOA signature]) -> reverted "SM: Signer not a guardian"
+      evidence: multiConfirmRecovery([SQ: SQ's EOA signature]) -> reverted "SM: Signer not a guardian"
+      evidence: multiConfirmRecovery([P, SQ] EOA signatures, sorted) -> reverted "SM: Signer not a guardian"
+      evidence: multiConfirmRecovery([X(P), P, SQ], sorted) -> reverted "SM: Signer not a guardian"
+      evidence: P sends multiConfirmRecovery([R, empty signature]) -> reverted "SM: sender not a guardian"
+      evidence: multiConfirmRecovery([R: signature made by SQ]) -> reverted "SM: Invalid guardian signature"
+      evidence: executeRecovery(W,[attacker],1) -> reverted "SM: confirmed signatures less than threshold"
+      ✔ T1c P and SQ act directly as EOAs -> rejected as non-guardians
+      evidence: multiConfirmRecovery([X:sig by P, X:sig by SQ]) -> reverted "SM: duplicate signers/invalid ordering"
+      evidence: multiConfirmRecovery([X:sig by P, X:sig by P]) -> reverted "SM: duplicate signers/invalid ordering"
+      evidence: multiConfirmRecovery([R, X] in descending address order) -> reverted "SM: duplicate signers/invalid ordering"
+      ✔ T1d X's signature submitted twice -> duplicate/ordering check rejects it
+
+  T10 request hygiene (red-team row 3.3): invalidateNonce, disableModule, re-enable
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: step 0 (executed): request {approvals 2, newThreshold 1, executeAfter 1791640989, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; module nonce 1; now 1791640929
+      evidence: step 1: W.execTransaction[signed Ph] -> module.invalidateNonce() -> succeeded
+      evidence: step 1: module nonce 1 -> 2; request {approvals 2, newThreshold 1, executeAfter 1791640989, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true
+      evidence: probe after step 1 (snapshot): finalizeRecovery(W) at executeAfter by an outsider -> succeeded
+      evidence: probe after step 1: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: step 2: W.execTransaction[signed Ph] -> W.disableModule(SENTINEL, module) -> succeeded
+      evidence: step 2: isModuleEnabled(module) = false; modules []; request {approvals 2, newThreshold 1, executeAfter 1791640989, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true; guardians still [0x74546013a870E8Fe3c81dC0b8331F5Aa9449336D,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307]
+      evidence: step 2 probe: finalizeRecovery(W) 5 s after executeAfter, module disabled -> reverted "GS104"
+      evidence: after the failed finalize the request is still stored: {approvals 2, newThreshold 1, executeAfter 1791640989, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}
+      evidence: step 3: W.execTransaction[signed Ph] -> W.enableModule(module) (1 h after executeAfter) -> succeeded
+      evidence: step 3: isModuleEnabled = true; request {approvals 2, newThreshold 1, executeAfter 1791640989, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true; now 1791644595 >= executeAfter 1791640989
+      evidence: step 3 probe: finalizeRecovery(W) by an unrelated outsider in the very next block (no new wait) -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: old Ph signs a transfer -> reverted "GS026"
+    ✔ T10a pending 2-approval request survives invalidateNonce and disableModule; after re-enable anyone finalizes at once (90ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: W disables the module -> succeeded
+      evidence: W re-enables the module 20 s later -> succeeded
+      evidence: finalizeRecovery(W) at the ORIGINAL executeAfter - 1 -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at the ORIGINAL executeAfter -> succeeded
+    ✔ T10b re-enabling before the delay ends does not restart the wait (original executeAfter still applies) (57ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: W disables the module -> succeeded
+      evidence: W (module disabled) -> module.cancelRecovery() -> succeeded
+      evidence: request after cancel: {approvals 0, newThreshold 0, executeAfter 0, newOwners []}
+      evidence: W re-enables the module -> succeeded
+      evidence: finalizeRecovery(W) after the delay -> reverted "SM: no ongoing recovery"
+    ✔ T10c control: cancelRecovery works while the module is disabled; after re-enable there is nothing to finalize (63ms)
+
+  T6 randomised property: a coalition without R and without Ph never changes W's owners
+      T6 result (seed 20261010, 39.3 s): runs=100 actions=4000
+        executeRecovery                      ok=0 reverted=442
+        direct attack on W                   ok=0 reverted=222
+        multiConfirmRecovery                 ok=16 reverted=859
+        time jump                            ok=477 reverted=0
+        EOA cancelRecovery/invalidateNonce   ok=59 reverted=55
+        EOA confirmRecovery                  ok=0 reverted=224
+        X.exec confirmRecovery               ok=291 reverted=368
+        finalizeRecovery                     ok=0 reverted=395
+        X.exec admin on X / module           ok=89 reverted=120
+        X.exec multiConfirm(null sig as X)   ok=107 reverted=135
+        EOA guardian admin                   ok=0 reverted=141
+        revert reasons:
+            623  GS013
+            458  SM: confirmed signatures less than threshold
+            450  SM: no ongoing recovery
+            410  SM: Signer not a guardian
+            302  SM: sender not a guardian
+            150  SM: Invalid guardian signature
+            149  SM: invalid new threshold
+            141  revert without reason
+            137  GS026
+             56  SM: duplicate signers/invalid ordering
+             30  GS104
+             30  GS031
+             25  GS030
+      evidence: steps where X's single approval existed for some proposed owner set: 3161
+      evidence: invariant violations: 0
+    ✔ T6 Candidate B: 100 random runs x 40 actions (seed 20261010) -> owners of W never change (39260ms)
+      T6-control result: runs=50 actions=1978
+        executeRecovery                      ok=3 reverted=196
+        direct attack on W                   ok=0 reverted=108
+        multiConfirmRecovery                 ok=22 reverted=424
+        time jump                            ok=229 reverted=0
+        EOA cancelRecovery/invalidateNonce   ok=35 reverted=30
+        EOA confirmRecovery                  ok=26 reverted=71
+        X.exec confirmRecovery               ok=0 reverted=337
+        finalizeRecovery                     ok=3 reverted=190
+        X.exec admin on X / module           ok=50 reverted=56
+        X.exec multiConfirm(null sig as X)   ok=0 reverted=127
+        EOA guardian admin                   ok=0 reverted=71
+        revert reasons:
+            520  GS013
+            280  SM: Signer not a guardian
+            235  SM: confirmed signatures less than threshold
+            206  SM: no ongoing recovery
+             79  SM: invalid new threshold
+             71  revert without reason
+             70  GS026
+             64  SM: sender not a guardian
+             17  SM: null signature should have the signer as the sender
+             16  SM: duplicate signers/invalid ordering
+             16  GS104
+             14  SM: recovery period still pending
+             13  GS030
+              9  GS031
+      evidence: runs in which P+SQ replaced WA's owner: 3/50
+    ✔ T6-control Candidate A: same generator, 50 runs -> must find an owner change (test has teeth) (7792ms)
+
+  T7 creation tamper test (optional): the address and a config read-back both catch a tampered setup
+      evidence: predicted 0x6C6d946e42BBe7a7712649fC12180c05f29C559a deployed 0x6C6d946e42BBe7a7712649fC12180c05f29C559a -> MATCH
+      evidence: read-back discrepancies: none (owners [Ph], threshold 1, modules [recovery module], no guard, guardians {R, X}, guardian threshold 2)
+    ✔ T7a honest one-transaction creation: predicted address matches and read-back is clean, even if an attacker submits it (39ms)
+      evidence: phone predicted 0x6C6d946e42BBe7a7712649fC12180c05f29C559a, tampered Safe is at 0x219F9611a84506C2548028841456B18F3d5d5289 -> MISMATCH (detected)
+      evidence: read-back discrepancies: owners [0x897063a2795Cb70C11293d04620F2CfFFe5822bd,0x53bc2c70818E618f9F9f6a45fF34800145F2b42A]
+      evidence: attacker alone signs a transaction from the tampered Safe (send 1 ETH to attacker) -> succeeded
+    ✔ T7b tampered initializer: extra owner (attacker) at setup -> address mismatch AND read-back flags it; consequence shown (46ms)
+      evidence: phone predicted 0x6C6d946e42BBe7a7712649fC12180c05f29C559a, tampered Safe is at 0xfA4eECb1D7A5b47751F835091E6268dA1737Bc52 -> MISMATCH (detected)
+      evidence: read-back discrepancies: modules [0x53bc2c70818E618f9F9f6a45fF34800145F2b42A,0x15d65Df5047d09b84d0596382Be18935CF9EF321]
+      evidence: attacker key, as an enabled module, calls execTransactionFromModule(swapOwner Ph -> attacker) -> succeeded
+      evidence: tampered Safe owners now [0x53bc2c70818E618f9F9f6a45fF34800145F2b42A] (attacker)
+    ✔ T7c tampered initializer: extra module (attacker key) at setup -> address mismatch AND read-back flags it; consequence shown (43ms)
+      evidence: phone predicted 0x6C6d946e42BBe7a7712649fC12180c05f29C559a, tampered Safe is at 0x0b548d31462120BAe66ffB4fbf18C272d0F7298D -> MISMATCH (detected)
+      evidence: read-back discrepancies: guardian threshold 1
+      evidence: X alone (signed by P) confirms and executes a recovery to the attacker -> succeeded
+      evidence: finalizeRecovery after the period -> succeeded
+      evidence: tampered Safe owners now [0x53bc2c70818E618f9F9f6a45fF34800145F2b42A] (attacker)
+    ✔ T7d tampered initializer: guardian threshold 1 instead of 2 -> address mismatch AND read-back flags it; consequence shown (60ms)
+
+  T8 two module instances instead of X: A {R,P} 60 s and B {R,SQ} 120 s (red-team change 3)
+      evidence: setup: W owners [0x897063a2795Cb70C11293d04620F2CfFFe5822bd]; modules [0x1ce91BD07A34c2c166A874Cef0B16fefA5D16A20,0x569E8266b6ff199D0067Ec99edF279d76432eE5a]; A guardians [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307] thr 2; B guardians [0x6D898E5CE86BF46c2ff83F863da657AcDcd1Ca5D,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307] thr 2
+      evidence: A: P confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: B: SQ confirmRecovery(W,[attacker],1,false) -> succeeded
+      evidence: A: SQ confirmRecovery(W,[attacker],1,true) -> reverted "SM: sender not a guardian"
+      evidence: A: executeRecovery(W,[attacker],1) by SQ after P's approval -> reverted "SM: confirmed signatures less than threshold"
+      evidence: A: P confirmRecovery(W,[attacker],1,true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: A: multiConfirmRecovery([P sig, SQ sig], execute=true) -> reverted "SM: Signer not a guardian"
+      evidence: A: multiConfirmRecovery([P sig, 'R' sig made by SQ], execute=true) -> reverted "SM: Invalid guardian signature"
+      evidence: A: multiConfirmRecovery([P sig, R entry with empty signature]) sent by P -> reverted "SM: null signature should have the signer as the sender"
+      evidence: A: P's signature made for B's recovery hash, submitted to A -> reverted "SM: Invalid guardian signature"
+      evidence: B: P confirmRecovery(W,[attacker],1,true) -> reverted "SM: sender not a guardian"
+      evidence: B: executeRecovery(W,[attacker],1) by P after SQ's approval -> reverted "SM: confirmed signatures less than threshold"
+      evidence: B: SQ confirmRecovery(W,[attacker],1,true) -> reverted "SM: confirmed signatures less than threshold"
+      evidence: B: multiConfirmRecovery([P sig, SQ sig], execute=true) -> reverted "SM: Signer not a guardian"
+      evidence: B: multiConfirmRecovery([SQ sig, 'R' sig made by P], execute=true) -> reverted "SM: Invalid guardian signature"
+      evidence: B: SQ's signature made for A's recovery hash, submitted to B -> reverted "SM: Invalid guardian signature"
+      evidence: A: P calls addGuardianWithThreshold(SQ,1) directly -> reverted "revert without reason"
+      evidence: W.execTransaction signed by P + SQ -> A.addGuardianWithThreshold(SQ,1) -> reverted "GS026"
+      evidence: A: finalizeRecovery(W) -> reverted "SM: no ongoing recovery"
+      evidence: B: finalizeRecovery(W) -> reverted "SM: no ongoing recovery"
+      evidence: approvals for [attacker]: A 1 of 2, B 1 of 2; W owners [0x897063a2795Cb70C11293d04620F2CfFFe5822bd]
+    ✔ T8a P + SQ (plus attacker/outsider/relayer) cannot recover on either instance (220ms)
+      evidence: A: multiConfirmRecovery(W,[newKey],1,[R sig, P sig],execute=false) by relayer -> succeeded
+      evidence: A: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: A: executeAfter - execute block time = 60 s
+      evidence: A: finalizeRecovery(W) at executeAfter-1 -> reverted "SM: recovery period still pending"
+      evidence: A: finalizeRecovery(W) at executeAfter by an unrelated outsider -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522), threshold 1
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+      evidence: other instance still enabled: true, pending request there: false
+    ✔ T8b R + P recover on instance A: owner changes only after 60 s; old Ph -> GS026 (193ms)
+      evidence: B: multiConfirmRecovery(W,[newKey],1,[R sig, SQ sig],execute=false) by relayer -> succeeded
+      evidence: B: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: B: executeAfter - execute block time = 120 s
+      evidence: B: finalizeRecovery(W) at executeAfter-1 -> reverted "SM: recovery period still pending"
+      evidence: B: finalizeRecovery(W) at executeAfter by an unrelated outsider -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522), threshold 1
+      evidence: W.execTransaction signed by OLD Ph (send 1 ETH) -> reverted "GS026"
+      evidence: W.execTransaction signed by newKey (send 1 ETH) -> succeeded
+      evidence: other instance still enabled: true, pending request there: false
+    ✔ T8b R + SQ recover on instance B: owner changes only after 120 s; old Ph -> GS026 (196ms)
+      evidence: A: multiConfirmRecovery(W,[P],1,[R sig, P sig],execute=true) by relayer -> succeeded
+      evidence: A: finalizeRecovery(W) at executeAfter, by an outsider -> reverted "SM: new owner cannot be guardian"
+      evidence: A request still stored after the failed finalize: {approvals 2, executeAfter 1791641044, newOwners [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342]}
+      evidence: A: R + P confirm the corrected request [newKey] at A's new nonce (execute=false) -> succeeded
+      evidence: A approvals for [newKey] = 2 (A has only 2 guardians)
+      evidence: A: executeRecovery(W,[newKey],1) to replace the stuck request -> reverted "SM: not enough approvals for replacement"
+      evidence: A: multiConfirmRecovery(W,[newKey],1,[R,P],execute=true) to replace it -> reverted "SM: not enough approvals for replacement"
+      evidence: A: finalizeRecovery(W) one week later -> reverted "SM: new owner cannot be guardian"
+    ✔ T8c stuck request on A (newOwners = [P], a guardian of A): finalize reverts; A cannot replace it with 2 approvals (195ms)
+      evidence: A: multiConfirmRecovery(W,[P],1,[R sig, P sig],execute=true) by relayer -> succeeded
+      evidence: A: finalizeRecovery(W) at executeAfter, by an outsider -> reverted "SM: new owner cannot be guardian"
+      evidence: B: multiConfirmRecovery(W,[newKey],1,[R sig, SQ sig],execute=true) -> succeeded
+      evidence: B: finalizeRecovery(W) at executeAfter by an outsider -> succeeded
+      evidence: after the rescue W owners [0xb22724B6c7D109a7f41bb2C9673776f342766522]; A's stale request {approvals 2, executeAfter 1791641044, newOwners [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342]}
+      evidence: A: finalizeRecovery(W) after the rescue, before any cancel -> reverted "SM: new owner cannot be guardian"
+      evidence: hazard: W[signed newKey] -> A.revokeGuardianWithThreshold(prev, P, 1) WITHOUT cancelling first -> succeeded
+      evidence: hazard: outsider calls A.finalizeRecovery(W) -> succeeded
+      evidence: hazard: W owners now [0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342] (P = 0xB4e9AE49869810FfE7c7d2cdFA7Ab9daFbff3342)
+      evidence: W.execTransaction[signed newKey] -> A.cancelRecovery() -> succeeded
+      evidence: A.getRecoveryRequest(W) after cancel: {approvals 0, executeAfter 0, newOwners []}
+      evidence: A: finalizeRecovery(W) after cancel -> reverted "SM: no ongoing recovery"
+    ✔ T8d rescue via B: R + SQ recover on B to newKey; newKey cancels A's stuck request through W (and why cancel, not guardian removal) (224ms)
+      evidence: A: R + P confirm [NA] (execute=false) -> succeeded
+      evidence: B: R + SQ confirm [NB] (execute=false) -> succeeded
+      evidence: A: executeRecovery(W,[NA],1) -> succeeded
+      evidence: B: executeRecovery(W,[NB],1) (next block) -> succeeded
+      evidence: pending: A {approvals 2, executeAfter 1791641047, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; B {approvals 2, executeAfter 1791641108, newOwners [0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE]}
+      evidence: NA signs W -> B.cancelRecovery() before A is finalized (NA is not an owner yet) -> reverted "GS026"
+      evidence: A: finalizeRecovery(W) at A's executeAfter -> succeeded
+      evidence: B: finalizeRecovery(W) right after A's finalize -> reverted "SM: recovery period still pending"
+      evidence: e1 (NA does nothing): B: finalizeRecovery(W) at B's executeAfter by an outsider -> succeeded
+      evidence: e1: W owners [0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE] (NB = 0x91AC6903DB1318e4AC308C6b2fA0EFbaE58ad0bE, NA = 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: e1: NA signs a transfer -> reverted "GS026"
+      evidence: e2: chain time after revert 1791641048 < B executeAfter 1791641108: true
+      evidence: e2: W.execTransaction[signed NA] -> B.cancelRecovery() during B's wait -> succeeded
+      evidence: e2: B: finalizeRecovery(W) after B's executeAfter -> reverted "SM: no ongoing recovery"
+    ✔ T8e race, same start: A's request (60 s) finalizes first, but B's (120 s) still finalizes later and overwrites it unless A's new owner cancels B (222ms)
+      evidence: B: R + SQ confirm and execute [NB] -> succeeded
+      evidence: A: R + P confirm and execute [NA], 70 s later -> succeeded
+      evidence: executeAfter: B 1791641105 < A 1791641116: true
+      evidence: B: finalizeRecovery(W) at B's executeAfter -> succeeded
+      evidence: A: finalizeRecovery(W) at that moment -> reverted "SM: recovery period still pending"
+      evidence: A: finalizeRecovery(W) at A's executeAfter (nobody cancelled) -> succeeded
+      evidence: W owners [0xb22724B6c7D109a7f41bb2C9673776f342766522] (NA = 0xb22724B6c7D109a7f41bb2C9673776f342766522): the request finalized LAST decides
+    ✔ T8e2 race, B started 70 s earlier: B matures first (t+120 < t+130); A then finalizes and overwrites unless B's new owner cancels A (195ms)
+      T8f result (seed 20261010, 46.2 s): runs=100 actions=4000
+        finalizeRecovery (anyone)              ok=0 reverted=530
+        EOA confirmRecovery                    ok=114 reverted=673
+        executeRecovery                        ok=0 reverted=490
+        time jump                              ok=493 reverted=0
+        EOA guardian admin                     ok=0 reverted=138
+        multiConfirmRecovery                   ok=20 reverted=1052
+        attack on W (non-owner sig / direct)   ok=0 reverted=382
+        EOA cancelRecovery/invalidateNonce     ok=53 reverted=55
+        revert reasons:
+            640  SM: confirmed signatures less than threshold
+            585  SM: no ongoing recovery
+            574  SM: sender not a guardian
+            572  SM: Signer not a guardian
+            237  GS026
+            196  SM: Invalid guardian signature
+            174  SM: invalid new threshold
+            138  revert without reason
+             55  GS030
+             51  GS104
+             45  SM: duplicate signers/invalid ordering
+             39  GS031
+             14  SM: null signature should have the signer as the sender
+      evidence: steps where a single coalition approval was recorded: A (P) 1123, B (SQ) 1087
+      evidence: invariant violations: 0
+    ✔ T8f random coalition without R and Ph: 100 runs x 40 actions (seed 20261010) -> W's owners never change (46177ms)
+      T8f-control result: runs=50 actions=1994
+        finalizeRecovery (anyone)              ok=2 reverted=265
+        EOA confirmRecovery                    ok=95 reverted=331
+        executeRecovery                        ok=2 reverted=221
+        time jump                              ok=230 reverted=0
+        EOA guardian admin                     ok=0 reverted=83
+        multiConfirmRecovery                   ok=26 reverted=496
+        attack on W (non-owner sig / direct)   ok=0 reverted=188
+        EOA cancelRecovery/invalidateNonce     ok=27 reverted=28
+        revert reasons:
+            336  SM: confirmed signatures less than threshold
+            278  SM: no ongoing recovery
+            234  SM: sender not a guardian
+            219  SM: Signer not a guardian
+            118  GS026
+            113  SM: Invalid guardian signature
+            100  SM: invalid new threshold
+             83  revert without reason
+             31  SM: duplicate signers/invalid ordering
+             29  GS030
+             25  GS104
+             16  GS031
+             14  SM: null signature should have the signer as the sender
+             10  SM: new owner cannot be guardian
+              5  SM: recovery period still pending
+              1  SM: not enough approvals for replacement
+      evidence: runs in which the coalition replaced W's owner: 2/50
+      evidence: first takeover: {"run":12,"step":33,"action":"finalizeRecovery (anyone)","owners":["0x53bc2c70818E618f9F9f6a45fF34800145F2b42A"]}
+    ✔ T8f-control same generator with a weak A (guardians {P, SQ}), 50 runs -> must find an owner change (6211ms)
+
+  T9 hidden (unlinked) owner or module planted by a malicious setup delegatecall (red-team row 2.1)
+      evidence: CREATE2 from HONEST initializer 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B; deployed 0xB81CbF43f5d4AC59Ff2E4A69926Be9C272f31F16; CREATE2 from malicious initializer 0xB81CbF43f5d4AC59Ff2E4A69926Be9C272f31F16
+      evidence: layout check: storage owners[Ph] (slot-2 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001; modules[recovery module] (slot-1 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001
+      evidence: storage owners[evil] = 0x0000000000000000000000000000000000000000000000000000000000000001 (planted, not linked)
+      evidence: getOwners() = [0x897063a2795Cb70C11293d04620F2CfFFe5822bd] (Ph = 0x897063a2795Cb70C11293d04620F2CfFFe5822bd); getThreshold() = 1
+      evidence: read-back discrepancies vs the honest configuration: none
+      evidence: isOwner(evil 0xaD767c67F61C30baF237d509f39418B75Dbe214e) = true
+      evidence: Wm.execTransaction signed ONLY by evil (send 1 ETH to evil), relayed by relayer -> succeeded
+      evidence: Wm.execTransaction signed ONLY by evil: disableModule(recovery module) -> succeeded
+      evidence: after evil's transaction, getModulesPaginated = []
+      evidence: control: honest initializer deployed at 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B (== honest prediction: true); isOwner(evil) = false
+      evidence: control: honest Safe, transaction signed only by evil -> reverted "GS026"
+    ✔ T9a hidden owner: getOwners() shows only [Ph], read-back is clean, yet evil alone signs; honest CREATE2 address differs (100ms)
+      evidence: CREATE2 from HONEST initializer 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B; deployed 0x5b5CFD50B0C5BE557395bc0Fbc42eA7280EDcf35; CREATE2 from malicious initializer 0x5b5CFD50B0C5BE557395bc0Fbc42eA7280EDcf35
+      evidence: layout check: storage owners[Ph] (slot-2 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001; modules[recovery module] (slot-1 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001
+      evidence: storage modules[evilModule] = 0x0000000000000000000000000000000000000000000000000000000000000001 (planted, not linked)
+      evidence: getModulesPaginated(SENTINEL, 50) = [0x15d65Df5047d09b84d0596382Be18935CF9EF321], next = 0x0000000000000000000000000000000000000001 (recovery module = 0x15d65Df5047d09b84d0596382Be18935CF9EF321)
+      evidence: read-back discrepancies vs the honest configuration: none
+      evidence: isModuleEnabled(evilModule 0x120C63760dE7a072a286417e1c0d2F44156DA06a) = true
+      evidence: evilModule calls Wm.execTransactionFromModule(send 1 ETH to evilModule) - no signature, no delay -> succeeded
+      evidence: Wm balance 10.0 -> 9.0 ETH
+      evidence: evilModule calls Wm.execTransactionFromModule(swapOwner Ph -> evilModule) -> succeeded
+      evidence: Wm.getOwners() now [0x120C63760dE7a072a286417e1c0d2F44156DA06a]
+      evidence: control: honest Safe, evilModule calls execTransactionFromModule -> reverted "GS104"
+    ✔ T9b hidden module: getModulesPaginated misses it, read-back is clean, yet execTransactionFromModule accepts it (86ms)
+      evidence: R + X(P) multiConfirmRecovery(Wm,[newKey],1,execute=true) -> succeeded
+      evidence: finalizeRecovery(Wm) after the wait -> succeeded
+      evidence: after recovery getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey); isOwner(evil) = true
+      evidence: old Ph signs a transfer after recovery -> reverted "GS026"
+      evidence: evil ALONE still signs a transfer after recovery -> succeeded
+    ✔ T9c (extra, row 3.6) the hidden owner survives a completed R + X recovery (72ms)
+
+
+  32 passing (2m)
+
+exit 0

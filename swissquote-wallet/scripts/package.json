@@ -1,0 +1,16 @@
+{
+  "name": "@sq/scripts",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "devnet": "tsx devnet.ts",
+    "story": "tsx story.ts",
+    "kit-sweep": "tsx kit-sweep.ts"
+  },
+  "dependencies": {"@sq/protocol": "workspace:*", "viem": "^2.38.0"},
+  "devDependencies": {"tsx": "^4.20.0", "typescript": "^5.9.0", "@types/node": "^24.0.0"}
+}

@@ -1,0 +1,75 @@
+
+
+  T9 hidden (unlinked) owner or module planted by a malicious setup delegatecall (red-team row 2.1)
+      evidence: CREATE2 from HONEST initializer 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B; deployed 0xB81CbF43f5d4AC59Ff2E4A69926Be9C272f31F16; CREATE2 from malicious initializer 0xB81CbF43f5d4AC59Ff2E4A69926Be9C272f31F16
+      evidence: layout check: storage owners[Ph] (slot-2 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001; modules[recovery module] (slot-1 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001
+      evidence: storage owners[evil] = 0x0000000000000000000000000000000000000000000000000000000000000001 (planted, not linked)
+      evidence: getOwners() = [0x897063a2795Cb70C11293d04620F2CfFFe5822bd] (Ph = 0x897063a2795Cb70C11293d04620F2CfFFe5822bd); getThreshold() = 1
+      evidence: read-back discrepancies vs the honest configuration: none
+      evidence: isOwner(evil 0xaD767c67F61C30baF237d509f39418B75Dbe214e) = true
+      evidence: Wm.execTransaction signed ONLY by evil (send 1 ETH to evil), relayed by relayer -> succeeded
+      evidence: Wm.execTransaction signed ONLY by evil: disableModule(recovery module) -> succeeded
+      evidence: after evil's transaction, getModulesPaginated = []
+      evidence: control: honest initializer deployed at 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B (== honest prediction: true); isOwner(evil) = false
+      evidence: control: honest Safe, transaction signed only by evil -> reverted "GS026"
+    ✔ T9a hidden owner: getOwners() shows only [Ph], read-back is clean, yet evil alone signs; honest CREATE2 address differs (848ms)
+      evidence: CREATE2 from HONEST initializer 0x8B1b422B3b8F886bE518Df7C44fd932112D29C1B; deployed 0x5b5CFD50B0C5BE557395bc0Fbc42eA7280EDcf35; CREATE2 from malicious initializer 0x5b5CFD50B0C5BE557395bc0Fbc42eA7280EDcf35
+      evidence: layout check: storage owners[Ph] (slot-2 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001; modules[recovery module] (slot-1 mapping) = 0x0000000000000000000000000000000000000000000000000000000000000001
+      evidence: storage modules[evilModule] = 0x0000000000000000000000000000000000000000000000000000000000000001 (planted, not linked)
+      evidence: getModulesPaginated(SENTINEL, 50) = [0x15d65Df5047d09b84d0596382Be18935CF9EF321], next = 0x0000000000000000000000000000000000000001 (recovery module = 0x15d65Df5047d09b84d0596382Be18935CF9EF321)
+      evidence: read-back discrepancies vs the honest configuration: none
+      evidence: isModuleEnabled(evilModule 0x120C63760dE7a072a286417e1c0d2F44156DA06a) = true
+      evidence: evilModule calls Wm.execTransactionFromModule(send 1 ETH to evilModule) - no signature, no delay -> succeeded
+      evidence: Wm balance 10.0 -> 9.0 ETH
+      evidence: evilModule calls Wm.execTransactionFromModule(swapOwner Ph -> evilModule) -> succeeded
+      evidence: Wm.getOwners() now [0x120C63760dE7a072a286417e1c0d2F44156DA06a]
+      evidence: control: honest Safe, evilModule calls execTransactionFromModule -> reverted "GS104"
+    ✔ T9b hidden module: getModulesPaginated misses it, read-back is clean, yet execTransactionFromModule accepts it (88ms)
+      evidence: R + X(P) multiConfirmRecovery(Wm,[newKey],1,execute=true) -> succeeded
+      evidence: finalizeRecovery(Wm) after the wait -> succeeded
+      evidence: after recovery getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey); isOwner(evil) = true
+      evidence: old Ph signs a transfer after recovery -> reverted "GS026"
+      evidence: evil ALONE still signs a transfer after recovery -> succeeded
+    ✔ T9c (extra, row 3.6) the hidden owner survives a completed R + X recovery (78ms)
+
+  T10 request hygiene (red-team row 3.3): invalidateNonce, disableModule, re-enable
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: step 0 (executed): request {approvals 2, newThreshold 1, executeAfter 1791640649, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; module nonce 1; now 1791640589
+      evidence: step 1: W.execTransaction[signed Ph] -> module.invalidateNonce() -> succeeded
+      evidence: step 1: module nonce 1 -> 2; request {approvals 2, newThreshold 1, executeAfter 1791640649, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true
+      evidence: probe after step 1 (snapshot): finalizeRecovery(W) at executeAfter by an outsider -> succeeded
+      evidence: probe after step 1: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: step 2: W.execTransaction[signed Ph] -> W.disableModule(SENTINEL, module) -> succeeded
+      evidence: step 2: isModuleEnabled(module) = false; modules []; request {approvals 2, newThreshold 1, executeAfter 1791640649, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true; guardians still [0x74546013a870E8Fe3c81dC0b8331F5Aa9449336D,0x8D7B9bCF110f549E77A1B114809F9d68cd57f307]
+      evidence: step 2 probe: finalizeRecovery(W) 5 s after executeAfter, module disabled -> reverted "GS104"
+      evidence: after the failed finalize the request is still stored: {approvals 2, newThreshold 1, executeAfter 1791640649, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}
+      evidence: step 3: W.execTransaction[signed Ph] -> W.enableModule(module) (1 h after executeAfter) -> succeeded
+      evidence: step 3: isModuleEnabled = true; request {approvals 2, newThreshold 1, executeAfter 1791640649, newOwners [0xb22724B6c7D109a7f41bb2C9673776f342766522]}; unchanged: true; now 1791644255 >= executeAfter 1791640649
+      evidence: step 3 probe: finalizeRecovery(W) by an unrelated outsider in the very next block (no new wait) -> succeeded
+      evidence: W.getOwners() = [0xb22724B6c7D109a7f41bb2C9673776f342766522] (newKey 0xb22724B6c7D109a7f41bb2C9673776f342766522)
+      evidence: old Ph signs a transfer -> reverted "GS026"
+    ✔ T10a pending 2-approval request survives invalidateNonce and disableModule; after re-enable anyone finalizes at once (94ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: W disables the module -> succeeded
+      evidence: W re-enables the module 20 s later -> succeeded
+      evidence: finalizeRecovery(W) at the ORIGINAL executeAfter - 1 -> reverted "SM: recovery period still pending"
+      evidence: finalizeRecovery(W) at the ORIGINAL executeAfter -> succeeded
+    ✔ T10b re-enabling before the delay ends does not restart the wait (original executeAfter still applies) (58ms)
+      evidence: R calls confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: X.execTransaction[signed P] -> confirmRecovery(W,[newKey],1,false) -> succeeded
+      evidence: executeRecovery(W,[newKey],1) by relayer -> succeeded
+      evidence: W disables the module -> succeeded
+      evidence: W (module disabled) -> module.cancelRecovery() -> succeeded
+      evidence: request after cancel: {approvals 0, newThreshold 0, executeAfter 0, newOwners []}
+      evidence: W re-enables the module -> succeeded
+      evidence: finalizeRecovery(W) after the delay -> reverted "SM: no ongoing recovery"
+    ✔ T10c control: cancelRecovery works while the module is disabled; after re-enable there is nothing to finalize (64ms)
+
+
+  6 passing (1s)
+
+exit 0

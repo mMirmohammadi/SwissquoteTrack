@@ -1,0 +1,29 @@
+{
+  "name": "swissquote-wallet-demo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test && pnpm test:adversarial",
+    "test:adversarial": "node --import tsx --test tests/protocol/*.test.ts tests/security/*.test.ts tests/integration/*.test.ts",
+    "test:contracts": "npm --prefix contracts test",
+    "devnet": "pnpm --filter @sq/scripts devnet",
+    "dev": "node dev.mjs",
+    "demo:local": "node local-demo.mjs",
+    "dev:all": "node dev.mjs --chain",
+    "dev:wallet": "pnpm --filter @sq/wallet dev",
+    "dev:tool": "pnpm --filter @sq/recovery-tool dev",
+    "dev:swissquote": "pnpm --filter @sq/swissquote dev",
+    "dev:partner": "pnpm --filter @sq/partner dev",
+    "dev:chain": "npm --prefix contracts run node",
+    "story": "pnpm --filter @sq/scripts story"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "tsx": "^4.20.6",
+    "@types/node": "^24.0.0",
+    "viem": "^2.38.0"
+  }
+}
