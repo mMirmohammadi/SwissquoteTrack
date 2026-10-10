@@ -1,6 +1,6 @@
 # Compound exact-math correction — isolated acceptance
 
-**Accepted locally: 591 tests passed, zero skips, typechecks/builds passed. Live Compound supply remains unverified.**
+**Accepted: 591 local tests passed, zero skips, typechecks/builds passed; bounded live Sepolia Compound supply also passed (`bash-1782`, exit0).**
 
 Parent job `bash-1746` exited 0. The [terminal gate log](<../../../AgentsLocal/46257332/v3/compound-gate.log#L4018>) reports `GATE PASS: passed=591, skipped=0, duration=433.0s`. Post-pass shutdown ERR_PNPM text comes from stopping owned services, not failed acceptance. Main v2 processes were retained.
 
@@ -10,4 +10,4 @@ The [independent implementation review](<../../research/v3-compound-exact-implem
 
 Actual bytecode preimages in the offline service corpus must hash-match production pins. Missing preimages now fail the suite instead of skipping acceptance. The real-App sponsorship suite passed17/17 with zero skips in the gate, including fresh-before-send faults and legitimate hash drift refusal.
 
-Latest public run7 remains funded1USDC with no supply submitted. [Run7 evidence](<../../../AgentsLocal/46257332/v3/sepolia-compound-7.json>) preserves its earlier preview refusal. A separately authorized bounded live run is still required for mined supply, positive position, zero remaining approval, and sponsor/zero-ETH proof. This acceptance does not authorize public publishing, submission, or production use.
+Public run8 passed: [versioned live evidence](<../../../swissquote-wallet/evidence/sepolia/browser-compound-2026-10-11.json>) records actual RELAYER-sponsored supply1USDC at wallet `0x9C26a4432f7E34f158560efB842c5EF9b2677B51`, transaction `0xa44904bd58728a3cdeef571a6c0aa7c23aaa5af7cad7bc618fafd2ea1b3694af`, block11887754. Two nodes confirmed SafeExecutionSuccess, exact transfer, approvals1000000/0, positive position999998, borrow0, allowance0, nonce1, and owner/walletETH0. The two-base-unit rounding difference is recorded, not hidden. Sender settled idle before owned v3 services stopped. [Run7 evidence](<../../../AgentsLocal/46257332/v3/sepolia-compound-7.json>) remains a historical fail-closed preview refusal with funded1USDC. This is a third-party Sepolia test deployment with virtual WebAuthn and MOCK identity/bank, not an official Compound market, production audit, mined withdrawal/swap, or cash-valued investment. No public publishing or submission is authorized.

@@ -1,0 +1,178 @@
+{
+  "schema": "sepolia-browser-compound-v1",
+  "outcome": "passed",
+  "chainId": 11155111,
+  "network": "Sepolia public testnet",
+  "claims": {
+    "identity": "MOCK KYC and MOCK bank account; actual test-token payout",
+    "passkey": "Chromium virtual authenticator; service verifies real WebAuthn, not hardware proof",
+    "recovery": "Not tested",
+    "kit": "Not tested",
+    "defi": "Compound III third-party test deployment, not official Compound Sepolia; no cash value, no deposit protection; smart-contract loss risk; not investment advice"
+  },
+  "submitted": [
+    {
+      "kind": "deploy",
+      "hash": "0x54c2afb559c83a6080b0b9c2777684fe63d5199a788f7343c5f922539058e152"
+    },
+    {
+      "kind": "mock-account-funding",
+      "hash": "0x62c83f9d3ae760333d0d6df2eb5c9a85c72cb02e376962c3782303700226d0d5"
+    },
+    {
+      "kind": "compound-supply-1-usdc",
+      "hash": "0xa44904bd58728a3cdeef571a6c0aa7c23aaa5af7cad7bc618fafd2ea1b3694af"
+    }
+  ],
+  "receipts": [
+    {
+      "kind": "deploy",
+      "hash": "0x54c2afb559c83a6080b0b9c2777684fe63d5199a788f7343c5f922539058e152",
+      "wallet": "0x9C26a4432f7E34f158560efB842c5EF9b2677B51",
+      "chainId": 11155111,
+      "status": "success",
+      "blockNumber": "11887751",
+      "blockHash": "0xcd5dee7b1a125236a639ebfeb66b736f4e6d25842487c9e2d1892b271bb7a1b6",
+      "gasUsed": "2650279",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "26502829754185",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "to": "0x4e1dcf7ad4e460cfd30791ccc4f9c8a4f820ec67"
+    },
+    {
+      "kind": "mock-account-funding",
+      "hash": "0x62c83f9d3ae760333d0d6df2eb5c9a85c72cb02e376962c3782303700226d0d5",
+      "wallet": "0x9C26a4432f7E34f158560efB842c5EF9b2677B51",
+      "chainId": 11155111,
+      "status": "success",
+      "blockNumber": "11887753",
+      "blockHash": "0x73e012f5ca90c7c3d93896f721af5fbe95b078bac7134a0dc177ea2bd693f353",
+      "gasUsed": "151779",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "1517792276685",
+      "sponsor": "0xe3c71e2a0ba81377a5e2a3c1d67279e36f75090e",
+      "to": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238"
+    },
+    {
+      "kind": "compound-supply-1-usdc",
+      "hash": "0xa44904bd58728a3cdeef571a6c0aa7c23aaa5af7cad7bc618fafd2ea1b3694af",
+      "wallet": "0x9C26a4432f7E34f158560efB842c5EF9b2677B51",
+      "chainId": 11155111,
+      "status": "success",
+      "blockNumber": "11887754",
+      "blockHash": "0xd722e3d6f3cc663eb99f82c728c43221deb7d7d7aebe01cb5f95d7bdb4345f7d",
+      "gasUsed": "371682",
+      "effectiveGasPrice": "10000015",
+      "gasCostWei": "3716825575230",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "to": "0x9c26a4432f7e34f158560efb842c5ef9b2677b51"
+    }
+  ],
+  "checks": [
+    "strict service, idle sender, two explicit Sepolia nodes and registry code/upgrade pins checked before any browser write",
+    "separate context generated 12-word card offline; portable build defaults to Sepolia",
+    "fresh password registration and service-verified WebAuthn enrollment; virtual authenticator only",
+    "factory ProxyCreation matches fresh deterministic wallet; two public receipts agree; real Safe code, sole owner, threshold one, nonce zero and EIP-1271 verified",
+    "served tool rejects setup links and synthetic 24-word input; never supplied an owner seed",
+    "actual independent tool verified original initializer, expected current owner and card on both recovery paths using pinned public history nodes",
+    "actual fresh-wallet state on two agreeing public nodes: 1 USDC, zero position, borrow, allowance, nonce and owner/wallet ETH; all registry code/upgrade pins match",
+    "real UI preview and explicit risk acknowledgement; identical signed canonical approve(1000000)/supply(1000000)/approve(0) batch; live screening clear; expected RELAYER pays; Safe ExecutionSuccess, Transfer and Approval events plus raw Compound logs; two-node receipt-block allowance zero, exact USDC spend, actual positive position, zero borrow, nonce +1 and owner/wallet ETH zero; no card-word transmission"
+  ],
+  "expectedRelayer": "0x6fc61DCE369786CFbf43536478C4CD521B4336f7",
+  "contracts": {
+    "usdc": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "compound": "0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e",
+    "multiSendCallOnly": "0x9641d764fc13c8B624c04430C7356C1C7C8102e2"
+  },
+  "toolBuildSha256": "acd5075dd079ec558c0ad55108cc15d3c13aafe2696d6ea1d5aafceed6c25510",
+  "health": {
+    "chainId": 11155111,
+    "strictSponsorship": true,
+    "mock": true
+  },
+  "retention": {
+    "status": "encrypted_device_passphrase_and_card_saved_before_funding",
+    "runId": "5bcf79bc-0b0d-4d00-923e-8dc172bf8ac8"
+  },
+  "wallet": "0x9C26a4432f7E34f158560efB842c5EF9b2677B51",
+  "owner": "0xAe6fbF45c5C28CB3b8A70e2A6a25F87BBa47E3EC",
+  "relayer": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+  "ownershipProofHash": "0x294c05231d654c384f312a2efd4671e923bd79f5f6c3db74e4ad05a362890a96",
+  "mockAccountSender": "0xe3c71e2a0ba81377a5e2a3c1d67279e36f75090e",
+  "beforeSupplyBlock": {
+    "number": "11887753",
+    "hash": "0x73e012f5ca90c7c3d93896f721af5fbe95b078bac7134a0dc177ea2bd693f353"
+  },
+  "before": {
+    "usdc": "1000000",
+    "position": "0",
+    "borrow": "0",
+    "allowance": "0",
+    "nonce": "0",
+    "ownerEth": "0",
+    "walletEth": "0"
+  },
+  "preview": {
+    "blockNumber": "11887753",
+    "effectsHash": "0x6417d8eeae5a343b6280c0f859509eb1305b05e774d361e469cb4777084153de",
+    "dappId": "compound",
+    "summaryCount": 3,
+    "warningCount": 1
+  },
+  "screening": {
+    "checkedAt": "2026-10-10T23:14:06.835Z",
+    "requiredLiveSanctionsClear": true,
+    "requiredIssuerFreezeListsClear": true,
+    "secondaryChainalysisLimited": true,
+    "warningCount": 1,
+    "identityStillMock": true
+  },
+  "approvalValues": [
+    "1000000",
+    "0"
+  ],
+  "compoundLogs": [
+    {
+      "topics": [
+        "0xd1cf3d156d5f8f0d50f6c122ed609cec09d35c9b9fb3fff6ea0959134dae424e",
+        "0x0000000000000000000000009c26a4432f7e34f158560efb842c5ef9b2677b51",
+        "0x0000000000000000000000009c26a4432f7e34f158560efb842c5ef9b2677b51"
+      ],
+      "data": "0x00000000000000000000000000000000000000000000000000000000000f4240",
+      "logIndex": 55
+    },
+    {
+      "topics": [
+        "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+        "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "0x0000000000000000000000009c26a4432f7e34f158560efb842c5ef9b2677b51"
+      ],
+      "data": "0x00000000000000000000000000000000000000000000000000000000000f423e",
+      "logIndex": 56
+    }
+  ],
+  "after": {
+    "usdc": "0",
+    "position": "999998",
+    "borrow": "0",
+    "allowance": "0",
+    "nonce": "1",
+    "ownerEth": "0",
+    "walletEth": "0"
+  },
+  "supply": {
+    "amountBaseUnits": "1000000",
+    "safeTxHash": "0x09716dcff90d9c5237674d3d7e3603f07b9e12eee83455b7335c90dab650d7b4",
+    "positionDeltaBaseUnits": "999998",
+    "positionDeltaVsNominalBaseUnits": "-2",
+    "positionNote": "Actual before/receipt-block credit includes Compound rounding and elapsed-block accrual; not asserted to equal nominal supply.",
+    "safeExecutionSuccess": true,
+    "executionFailureAbsent": true,
+    "exactTransfer": true,
+    "approvalValues": [
+      "1000000",
+      "0"
+    ],
+    "sponsorMatchesExpectedRelayer": true
+  }
+}
