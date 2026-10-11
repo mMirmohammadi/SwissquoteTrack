@@ -1,5 +1,7 @@
 # Independent security review — bounded final pass
 
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
 **Result: 49 of 50 tests passed; security acceptance remains blocked by production passkey step-up options.** The actual WebAuthn adapter returns HTTP 500 before an assertion can be requested. This is an availability/demo blocker, not demonstrated unauthorized signing. Exact builder action is in [final findings](<../plans/security-final-findings.md>).
 
 ## Executed evidence

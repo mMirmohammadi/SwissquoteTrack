@@ -59,7 +59,7 @@ el('check-button').onclick = () => void run(async ticket => {
   const result = await checkWallet(code, words, config, undefined, currentOwner);
   if (ticket !== generation || code !== value('setup') || words !== value('check-words') || currentOwner !== value('check-current-owner')) return;
   el<HTMLTextAreaElement>('check-words').value = '';
-  status(result.ok ? `Verified: ${result.wallet}. Both RPC checks passed at the recorded state. Original initializer and independently expected current owner were checked separately. Card required on both recovery paths.` : `Not verified: ${result.reasons.join(' ')}`, result.ok ? 'success' : 'error');
+  status(result.ok ? `Verified ✓ This wallet is yours and set up as promised: ${result.wallet}. Both RPC checks passed at the recorded state. Original initializer and independently expected current owner were checked separately. Card required on both recovery paths.` : `Not verified: ${result.reasons.join(' ')}`, result.ok ? 'success' : 'error');
 });
 for (const id of ['setup', 'check-words', 'check-current-owner']) el(id).addEventListener('input', () => { el('status').hidden = true; });
 for (const id of ['request', 'approve-words']) el(id).addEventListener('input', invalidateReview);
@@ -69,17 +69,17 @@ el('review-button').onclick = () => void run(async ticket => {
   if (ticket !== generation || code !== value('request') || words !== value('approve-words')) return;
   review = checked; el('review-wallet').textContent = checked.request.wallet; el('review-owner').textContent = checked.request.newOwner;
   el('fingerprint').textContent = checked.fingerprint; el('review-module').textContent = checked.request.module; el('review').hidden = false;
-  status('Both nodes verified the request hash, current nonce and card guardian. Compare before signing.');
+  status('Request checked on the blockchain. Make sure the 4 words below match your new phone.');
 });
 el('confirm').onchange = () => { el<HTMLButtonElement>('sign-button').disabled = !review || !el<HTMLInputElement>('confirm').checked; el<HTMLButtonElement>('check-kit-owner').disabled = !openedKit; };
 el('sign-button').onclick = () => void run(async ticket => {
-  if (!review || !el<HTMLInputElement>('confirm').checked) throw new Error('Review and confirm the fingerprint first.');
+  if (!review || !el<HTMLInputElement>('confirm').checked) throw new Error('Review and confirm the 4 check words first.');
   const code = value('request'), words = value('approve-words');
   const approval = await approveRecovery(code, words, config, review);
   if (ticket !== generation || code !== value('request') || words !== value('approve-words')) return;
   el<HTMLTextAreaElement>('approval').value = approval; el('approval-result').hidden = false;
   el<HTMLTextAreaElement>('approve-words').value = ''; review = undefined;
-  el('review').hidden = true; status('Card approval signed. No transaction was sent.');
+  el('review').hidden = true; status('Approved with your card. Paste the code below into your new phone. No transaction was sent.');
 });
 el('copy-approval').onclick = () => void copy(value('approval'));
 el('open-kit').onclick = () => void run(async ticket => {

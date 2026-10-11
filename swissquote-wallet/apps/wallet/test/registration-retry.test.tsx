@@ -57,6 +57,7 @@ await mock.module('../src/chain.ts', { namedExports: {
 } });
 await mock.module('../src/storage.ts', { namedExports: {
   loadDevice: async (id: string) => id === 'client' ? saved : replacementSaved,
+  updateDeviceEvidence: async (id: string, patch: Partial<DeviceRecord>) => { assert.equal(id, 'client'); assert(saved); saved = { ...saved, ...patch }; return saved; },
   saveDevice: async () => { saved = baseRecord(); return saved; },
   bindWallet: async (record: DeviceRecord, target: any, code: string, card: any, block?: string) => { saved = { ...record, wallet: target, setupCode: code, cardGuardian: card, deploymentBlock: block }; return saved; },
   promoteDevice: async () => { saved = { ...replacementSaved!, id: 'client' }; replacementSaved = undefined; return saved; }, unlockDevice: async (_record: DeviceRecord, pass: string) => { if (pass !== 'device-passphrase') throw new Error('Could not unlock this device.'); if (holdUnlock) await new Promise<void>(resolve => { unlockFinish = resolve; }); return seed; },
@@ -91,6 +92,26 @@ function installFetch() {
 }
 async function mount() { const container = new Host('div', doc); const root = createRoot(container as unknown as Element); await act(async () => root.render(<App/>)); return { container, root }; }
 function reset() { saved = undefined; deploys = 0; registrations = []; refuse = true; lookup = undefined; lookups = []; holdRegistration = false; registrationFinish = undefined; holdChallenge = false; challengeFinish = undefined; signings = 0; holdPending = false; pendingFinish = undefined; holdUnlock = false; unlockFinish = undefined; replacementSaved = undefined; installFetch(); }
+
+test('manual wallet check survives reload, can be cleared, and is invalidated after owner replacement', async () => {
+  reset(); saved = { ...baseRecord(), wallet, setupCode, cardGuardian: guardian };
+  const checkbox = (container: Host) => { const node = all(container).find(n => n.tagName === 'INPUT' && props(n).type === 'checkbox'); assert(node); return node; };
+  const close = async (root: ReturnType<typeof createRoot>) => { await act(async () => { root.unmount(); lookups.forEach(item => item.reject(new Error('Test cleanup'))); }); lookups = []; };
+  let view = await mount();
+  try {
+    await login(view.container); assert.equal(checkbox(view.container).checked, false);
+    await act(async () => { props(checkbox(view.container)).onChange({ target: { checked: true } }); }); await flush();
+    assert.equal(saved.independentCheck?.chainId, 31337); assert.equal(checkbox(view.container).checked, true);
+    await close(view.root); view = await mount(); await login(view.container);
+    assert.equal(checkbox(view.container).checked, true, 'reload restores the saved manual check');
+    await act(async () => { props(checkbox(view.container)).onChange({ target: { checked: false } }); }); await flush();
+    assert.equal(saved.independentCheck, undefined); assert.equal(checkbox(view.container).checked, false);
+    await act(async () => { props(checkbox(view.container)).onChange({ target: { checked: true } }); }); await flush();
+    await close(view.root); saved = { ...saved, owner: guardian };
+    view = await mount(); await login(view.container);
+    assert.equal(checkbox(view.container).checked, false, 'new owner must be checked again');
+  } finally { await close(view.root); }
+});
 
 test('confirmed creation refusal publishes bound wallet, preserves key/unlock, and explicit retry succeeds without redeployment or stale GET overwrite', async () => {
   reset(); const { container, root } = await mount();

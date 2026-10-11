@@ -1,4 +1,8 @@
-# Five-minute judge pitch — keep the relationship, not the payment key
+# Historical pitch draft — superseded by V4
+
+**Do not rehearse from this draft.** Its browser-payment and DeFi status predates the verified Sepolia service runs. The current pitch is the V4 offline deck and presenter notes under `Docs/pitch/v4/` in the main checkout; the integration handoff links those deliverables. Recovery remains SCRIPTED on public Sepolia until the separate G1 browser gate is actually recorded as passed. This retained draft is historical reference, not the current claim ledger.
+
+## Original five-minute draft — keep the relationship, not the payment key
 
 **Your key pays. Your card and one helper recover the same address. Your current emergency kit provides an independent exit.** Present the measured Sepolia script first; do not turn it into a claim that the browser, bank services or DeFi ran publicly.
 

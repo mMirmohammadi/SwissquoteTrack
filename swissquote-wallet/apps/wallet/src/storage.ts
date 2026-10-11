@@ -13,6 +13,8 @@ export interface DeviceRecord {
   cardGuardian?: Address;
   kitSavedAt?: string;
   independentCheckedAt?: string;
+  /** Personal acknowledgement, not an automated audit; bound to the exact public setup. */
+  independentCheck?: { chainId: number; wallet: Address; owner: Address; setupCode?: string; cardGuardian?: Address; checkedAt: string };
   passkeyRegisteredAt?: string;
   pastRecipients?: Address[];
 }
@@ -42,7 +44,7 @@ export async function saveDevice(id: string, mnemonic: string, passphrase: strin
   await request('readwrite', store => store.put(record));
   return record;
 }
-export async function updateDeviceEvidence(id: string, patch: Pick<Partial<DeviceRecord>, 'kitSavedAt' | 'independentCheckedAt' | 'passkeyRegisteredAt' | 'pastRecipients'>): Promise<DeviceRecord> {
+export async function updateDeviceEvidence(id: string, patch: Pick<Partial<DeviceRecord>, 'kitSavedAt' | 'independentCheckedAt' | 'independentCheck' | 'passkeyRegisteredAt' | 'pastRecipients'>): Promise<DeviceRecord> {
   const record = await loadDevice(id);
   if (!record) throw new Error('No encrypted device record is available.');
   const next = { ...record, ...patch };

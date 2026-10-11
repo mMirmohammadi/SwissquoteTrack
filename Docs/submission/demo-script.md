@@ -1,5 +1,7 @@
 # Earlier demo script — historical local fallback
 
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
 **This is the earlier local/v2 plan, not the approved v3 running order.** L11 owns the current pitch; use the [claim ledger](<claims.md>) for its evidence boundaries. v3 public-chain transactions are separately authorised for their run owners, not for this documentation lane. Do not apply the local-only instruction at the bottom to the whole team.
 
 **Present only rehearsed behavior.** This is a planned five-minute structure, not a record of a completed demo. Slot length is assumed. If only local execution is verified, say “local chain with pinned contract code and MOCK token”; do not say “live Sepolia.” Use the [run guide](<../../swissquote-wallet/README.md>) for setup and [evidence checklist](<IMPLEMENTATION.md>) for readiness.

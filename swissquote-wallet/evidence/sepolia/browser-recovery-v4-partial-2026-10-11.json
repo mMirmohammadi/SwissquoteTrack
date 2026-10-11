@@ -1,0 +1,106 @@
+{
+  "schema": "sepolia-g1-recovery-resume-v1",
+  "resumedFrom": "v4-g1-20261011-0543",
+  "outcome": "incomplete_query_service_and_chain_before_any_retry",
+  "chainId": 11155111,
+  "claims": {
+    "identity": "MOCK KYC, bank account and partner face check",
+    "passkey": "Chromium virtual authenticator; real WebAuthn service verification, not hardware fingerprint proof",
+    "defi": "not tested",
+    "highValueStepUp": "not tested; omitted under funding/payment bounds"
+  },
+  "checks": [
+    "two exact retained public receipts and common-block owners/threshold/balance/nonce/both pending modules checked before normal login",
+    "actual normal password login to retained account; existing registration verified, no auth response injection",
+    "old-owner-payment: exact 1 USDC Transfer, Safe success, nonce +1, wallet balance -1; expected owner signature checked before broadcast"
+  ],
+  "receipts": [
+    {
+      "kind": "retained-deployment",
+      "hash": "0x9c1549421b52a006ebd23967ef188e7182ba8491063dc881281607434ab7787b",
+      "blockNumber": "11889683",
+      "blockHash": "0x492226d74679445aaad15f9b7133172cf19dd5243b7df60e6de48356ec6fffb3",
+      "timestamp": "1791697272",
+      "to": "0x4e1dcf7ad4e460cfd30791ccc4f9c8a4f820ec67",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "gasCostWei": "26502712404272"
+    },
+    {
+      "kind": "retained-mock-account-funding",
+      "hash": "0x2f61fd2f254cd20cb3a9093de009d11a8c7b114104e1079b7ef77bb6c1bff51d",
+      "blockNumber": "11889685",
+      "blockHash": "0x68e1d79fee9480a0d74404e9e3b65c9feee166a4b3c7a8c7ad40e8270317d28b",
+      "timestamp": "1791697296",
+      "to": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+      "sponsor": "0xe3c71e2a0ba81377a5e2a3c1d67279e36f75090e",
+      "gasCostWei": "1517792428464"
+    },
+    {
+      "kind": "old-owner-payment",
+      "hash": "0xfce86ae97a677abd7e5277c1ca65084cc09ad76ff10946dad8fc5ed453cb87fe",
+      "blockNumber": "11889727",
+      "blockHash": "0x0f48edd62f7dcb10527dc91af56e590111cc0df4fda58b130eb0b5cfa9daa18f",
+      "timestamp": "1791697800",
+      "to": "0x9bae9f8b97262d95c3834dea2e74ba520d686e5c",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "gasCostWei": "1992893188624"
+    },
+    {
+      "kind": "card-plus-partner-start",
+      "hash": "0xb91ce0bec9a62eb4844f309ea3961b9d70eb551e4838e4f2bed2a86bef88654f",
+      "blockNumber": "11889728",
+      "blockHash": "0xaf409cc3abf989d3b477d9d9ffd65d7658f32c69a9d514d3dbf33231a2b54a44",
+      "timestamp": "1791697812",
+      "to": "0x949d01d424be050d09c16025dd007cb59b3a8c66",
+      "sponsor": "0x6fc61dce369786cfbf43536478c4cd521b4336f7",
+      "gasCostWei": "9347364955760"
+    }
+  ],
+  "fundingUsdc": "2",
+  "runId": "v4-g1-resume-0552",
+  "wallet": "0x9BAE9f8b97262d95c3834Dea2E74BA520d686E5c",
+  "owner": "0xbE5Da91E9880c7a21bC186eCa31189E673665C2E",
+  "resumePreflight": {
+    "commonBlock": "11889725",
+    "commonHash": "0x90150438f86e1181028d29f561e8a16882c75e571ab6ead837e28af5672e1157",
+    "balance": "2000000",
+    "nonce": "0",
+    "pending": false,
+    "owners": [
+      "0xbe5da91e9880c7a21bc186eca31189e673665c2e"
+    ]
+  },
+  "toolSha256": "1b5ed349808745a9a4e5d90ac55f8dd998389ac2e6e1972ad9df920704dd8b9e",
+  "newOwner": "0x7Bb5750ead80776136a6ddCCaED94073F5910371",
+  "executeAfter": "1791697992",
+  "senderStatus": {
+    "chainId": 11155111,
+    "blocked": false,
+    "status": "idle"
+  },
+  "failureChain": {
+    "block": "11889730",
+    "owners": [
+      "0xbe5da91e9880c7a21bc186eca31189e673665c2e"
+    ],
+    "nonce": "1",
+    "balance": "1000000",
+    "pending": [
+      {
+        "executeAfter": "1791697992",
+        "newOwners": [
+          "0x7Bb5750ead80776136a6ddCCaED94073F5910371"
+        ]
+      },
+      {
+        "executeAfter": "0",
+        "newOwners": []
+      }
+    ]
+  },
+  "blocker": {
+    "stage": "actual replacement kit download and offline independent decrypt",
+    "category": "bounded_browser_timeout"
+  },
+  "captureBoundary": "Secret-masked captures remain private until explicit reviewed media selection; no private state or code copied."
+}

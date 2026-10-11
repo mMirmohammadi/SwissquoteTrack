@@ -16,6 +16,15 @@ export function remaining(deadline: bigint, timestamp: bigint): string {
   if (!seconds) return 'Waiting period complete on the last checked block';
   return `${seconds / 86400n ? `${seconds / 86400n}d ` : ''}${seconds % 86400n / 3600n}h ${seconds % 3600n / 60n}m ${seconds % 60n}s (includes 15-second safety margin)`;
 }
+export function secondsLeft(deadline: bigint, timestamp: bigint): bigint {
+  return deadline + SAFETY_MARGIN > timestamp ? deadline + SAFETY_MARGIN - timestamp : 0n;
+}
+export function clock(seconds: bigint): string {
+  const value = seconds > 0n ? seconds : 0n;
+  if (value >= 86400n) return `${value / 86400n}d ${value % 86400n / 3600n}h ${value % 3600n / 60n}m`;
+  if (value >= 3600n) return `${value / 3600n}h ${value % 3600n / 60n}m ${value % 60n}s`;
+  return `${value / 60n}:${(value % 60n).toString().padStart(2, '0')}`;
+}
 /** Positive reports survive disagreement/outage; only two matching pinned reads can say clear/ready. */
 export async function pollRecovery(clients: readonly PublicClient[], wallet: Address, chainId: number): Promise<Snapshot> {
   if (clients.length < 2) throw new Error('Recovery status unknown: configure two independent RPC clients.');

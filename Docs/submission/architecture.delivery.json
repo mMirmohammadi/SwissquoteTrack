@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "87d8eeb0-bf22-4de7-b84d-fed3133bbfec",
+  "receiptId": "a6cb3d70-cbd8-4564-ab47-6037965d3afb",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
-  "input": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.candidate.json",
-  "output": "/home/dev/Hackaton/SwissquoteTrack/Docs/submission/architecture.html",
+  "input": "/home/dev/Hackaton/SwissquoteTrack/.worktrees/v4-docs/.archify/architecture-route-correction-20261011-081500/candidate.json",
+  "output": "/home/dev/Hackaton/SwissquoteTrack/.worktrees/v4-docs/Docs/submission/architecture.html",
   "specification": {
-    "sha256": "b19493f9abdb1ffc84d279863080ca20babdb74838c22e345cd8dba85f7d0c81",
-    "bytes": 2718
+    "sha256": "1c9f6e71dbd6f95035dec90bcaf13c48a5a49416b7b93efb86b79297186853a5",
+    "bytes": 11199
   },
   "artifact": {
-    "sha256": "371c8c075d5135dcb7ef23f24c6ad571a763d59ba0f8d6927abd8fab6a66d6e3",
-    "bytes": 756974
+    "sha256": "afee0693aa39e6fa1832effc67348a26915f6518fcf446dd4503541bf1531193",
+    "bytes": 781495
   }
 }

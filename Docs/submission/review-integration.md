@@ -1,5 +1,7 @@
 # Independent integration review — bounded first pass
 
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
 **Service integration checks pass. Real-chain verification remains unrun:** no isolated, initialized local RPC was assigned to this verifier. The local-chain suite intentionally skips without `INTEGRATION_RPC_URL`; its existence is not completion evidence.
 
 Edited only this report and tests under [integration tests](<../../swissquote-wallet/tests/integration/>). No dependency installation, implementation/script edits, commits, pushes, or Sepolia transactions. Builders were changing implementation concurrently; results describe the implementation loaded during each run, not a frozen commit.

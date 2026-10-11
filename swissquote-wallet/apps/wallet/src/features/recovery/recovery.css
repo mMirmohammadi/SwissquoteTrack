@@ -1,0 +1,41 @@
+/* Recovery wizard: vertical numbered stepper */
+.recovery-wizard .rw-lead{margin:10px 0 22px}
+.rw-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rw-step{display:grid;grid-template-columns:34px minmax(0,1fr);gap:16px;position:relative;padding-bottom:22px}
+.rw-step:not(:last-child):before{content:"";position:absolute;left:16px;top:36px;bottom:4px;width:2px;background:var(--line,#e1e7e4)}
+.rw-marker{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;background:#edf1ef;color:#728183;border:2px solid #e1e7e4}
+.rw-body{min-width:0;padding-top:5px}
+.rw-body>h3{font-size:17px;margin-bottom:4px}
+.rw-body .field{margin:12px 0}
+.rw-current .rw-marker{background:var(--accent,#ee663f);border-color:var(--accent,#ee663f);color:#fff;box-shadow:0 0 0 4px #ee663f22}
+.rw-current .rw-body{background:#fbfcfa;border:1px solid #e1e7e4;border-radius:12px;padding:16px 18px;margin-top:-6px}
+.rw-done .rw-marker{background:#e4f0e8;border-color:#bcd8c5;color:var(--green,#21674f)}
+.rw-done:not(:last-child):before{background:#bcd8c5}
+.rw-done .rw-body>h3{color:#4b6456}
+.rw-done .rw-body>p,.rw-done .rw-body>.field{opacity:.8}
+.rw-upcoming .rw-body{opacity:.55}
+.rw-upcoming .rw-body>h3{color:#728183}
+.rw-safety{background:#fff6df;border:1px solid #ecdfb7;border-radius:9px;padding:10px 14px;color:#8c7233!important}
+.rw-compare{border:1px solid #dce5d2;background:#f0f4e9;border-radius:10px;padding:14px 16px;margin:12px 0}
+.rw-label{display:block;font-size:12px;font-weight:700;color:#3a4f49;margin-bottom:8px}
+.rw-groups{display:block;font-family:monospace;font-size:20px;letter-spacing:1px;line-height:1.6;color:#2d4540}
+.rw-substeps{margin:12px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:10px;font-size:13px;color:#3a4f49}
+.rw-substeps textarea{margin:8px 0}
+.rw-countdown .recovery-countdown{text-align:center;padding:12px 0}
+.rw-countdown .countdown-value{font-family:'Manrope',sans-serif;font-size:56px;letter-spacing:-2px;display:block;color:var(--ink,#1b3033)}
+.rw-countdown progress{width:100%;height:10px}
+.rw-kit{border-top:1px solid #e1e7e4;margin-top:16px;padding-top:14px}
+.rw-kit .button-row{margin:8px 0}
+.rw-done-box,.rw-done>h3{color:var(--green,#21674f)}
+.recovery-wizard details,.recovery-alert details{margin:10px 0;font-size:12px}
+.recovery-wizard summary,.recovery-alert summary{cursor:pointer;color:#5a7666;font-weight:700;font-size:12px}
+/* Alert: red banner only when a recovery is pending */
+.recovery-alert[data-pending]{background:#fdecea;border:2px solid #c8442c;color:#7d2412}
+.recovery-alert[data-pending] h3{color:#9c2a14;font-size:20px}
+.recovery-alert[data-pending] .ra-lead{color:#7d2412;font-size:14px}
+.recovery-alert .ra-eyebrow{display:block;font-size:10px;font-weight:700;letter-spacing:1.4px;text-transform:uppercase;color:#c8442c;margin-bottom:6px}
+.recovery-alert .ra-pending .countdown-value{font-size:30px;color:#9c2a14}
+.recovery-alert .ra-actions{display:flex;flex-direction:column;gap:8px;min-width:200px}
+.recovery-alert[data-pending] .polish-stop{background:#c8442c;color:#fff;font-size:14px;padding:15px 20px}
+.recovery-alert .ra-secondary{background:transparent!important;color:#7d2412!important;border:1px solid #e3b2a5}
+.recovery-alert.all-clear details small{color:#2f6b4c}

@@ -3,7 +3,8 @@ import { buildCancelRecoveryTx, safeAbi } from '@sq/protocol';
 import type { FeatureProps } from '../context';
 import { TEST_IDS } from '../test-ids';
 import { confirmedOn } from '../../chain';
-import { addressGroups, pollRecovery, remaining } from '../recovery/core';
+import { addressGroups, pollRecovery, RECOVERY_MODULES, remaining } from '../recovery/core';
+import { Countdown } from '../recovery/Countdown';
 import { useRecoveryPoll } from './useRecoveryPoll';
 
 export default function Feature({ context }: FeatureProps) {
@@ -34,16 +35,19 @@ export default function Feature({ context }: FeatureProps) {
     context.notify('Both public nodes confirm all pending recovery requests were stopped.');
     await context.refresh();
   }
-  return <section className="recovery-alert" data-testid={TEST_IDS.alert} aria-label="Recovery protection">
-    <div>{error && <p role="alert">{error}</p>}
-      {!snapshot && !error && <p role="status">Checking recovery on two public nodes…</p>}
-      {snapshot?.pending.length ? <><h3>Someone is replacing your wallet key.</h3>
-        {snapshot.pending.map((pending, i) => <div key={`${pending.module}:${i}`}><strong className="address-wrap">{pending.newOwners.map(addressGroups).join(' / ')}</strong><p>{error ? 'Countdown unavailable — last known request, not a current confirmation.' : remaining(pending.executeAfter, snapshot.timestamp)}</p></div>)}
-        <p>Not you? Stop every pending request with your current owner key. Swissquote sponsors protective cancellation under its protective-cancel rules; service or network failures can still prevent it.</p>
+  const clear = !!snapshot?.certain && !snapshot.pending.length && !error;
+  return <section className={snapshot?.certain && !snapshot.pending.length && !error ? 'recovery-alert all-clear' : 'recovery-alert'} data-testid={TEST_IDS.alert} aria-label="Recovery protection" data-pending={snapshot?.pending.length ? 'true' : undefined}>
+    <div className="ra-text">{error && <p role="alert">{error}</p>}
+      {!snapshot && !error && <p role="status">Checking whether anyone is recovering your wallet…</p>}
+      {snapshot?.pending.length ? <><span className="ra-eyebrow">Was it you?</span><h3>Someone is replacing your wallet key.</h3>
+        <p className="ra-lead">Someone is moving your wallet to a new phone. Your current phone can stop it before the waiting period ends.</p>
+        {snapshot.pending.map((pending, i) => <div className="ra-pending" key={`${pending.module}:${i}`}><Countdown pending={pending} snapshot={snapshot} unavailable={!!error} />
+          <details><summary>Details</summary><p>Helper: {RECOVERY_MODULES.find(module => module.address.toLowerCase() === pending.module.toLowerCase())?.label || 'Unknown helper'}</p><p>New owner address:</p><strong className="address-wrap">{pending.newOwners.map(addressGroups).join(' / ')}</strong><p>{error ? 'Countdown unavailable — last known request, not a current confirmation.' : remaining(pending.executeAfter, snapshot.timestamp)}</p>
+            <p>Stopping uses your current phone’s key and cancels every pending request. Swissquote pays the network fee under its protective-cancel rules; service or network failures can still prevent it.</p></details></div>)}
         {acknowledged === identity && <p>You marked this request as yours. It is still pending and can still be stopped.</p>}
-      </> : snapshot?.certain && !error ? <p>Both public nodes report no pending recovery at block {snapshot.blockNumber.toString()}.</p> : null}
+      </> : clear ? <><p>No one is trying to move your wallet.</p><details><summary>Details</summary><small>Both public nodes report no pending recovery at block {snapshot!.blockNumber.toString()}.</small></details></> : null}
     </div>
-    {(snapshot?.pending.length || error) && <div><button data-testid={TEST_IDS.alertCancel} disabled={context.busy || !context.device} onClick={() => { void context.run('Stopping recovery', stop); }}>Stop it — this wasn’t me</button>
-      {!!snapshot?.pending.length && <button disabled={context.busy} onClick={() => setAcknowledged(identity)}>It was me</button>}</div>}
+    {(snapshot?.pending.length || error) && <div className="ra-actions"><button className="polish-stop" data-testid={TEST_IDS.alertCancel} disabled={context.busy || !context.device} onClick={() => { void context.run('Stopping recovery', stop); }}>Stop it — this wasn’t me</button>
+      {!!snapshot?.pending.length && <button className="ra-secondary" disabled={context.busy} onClick={() => setAcknowledged(identity)}>It was me</button>}</div>}
   </section>;
 }

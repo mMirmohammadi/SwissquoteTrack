@@ -18,6 +18,13 @@ test('portable build has inline executable code and CSS, no external assets or s
   for (const endpoint of ['http://127.0.0.1:8545', 'http://localhost:8545', 'http://127.0.0.1:8645', 'http://localhost:8645', 'ws://127.0.0.1:5174', 'ws://127.0.0.1:5274', 'https://rpc.sepolia.ethpandaops.io']) assert(policy.includes(endpoint));
   assert.match(html, /Current ownership is unverified/);
   assert.match(html, /MOCK independent publisher/);
+  assert.match(html, /Independent Recovery Desk · works without Swissquote/);
+  assert.match(html, /4 check words/);
+  for (const tab of ['card', 'check', 'verify', 'approve', 'kit']) {
+    assert.match(html, new RegExp(`data-tab="${tab}"`));
+    assert.match(html, new RegExp(`<section id="${tab}"`));
+  }
+  for (const id of ['fingerprint', 'confirm', 'sign-button', 'approve-words', 'seed', 'reset', 'save']) assert.match(html, new RegExp(`id="${id}"`));
   // Viem contains optional CCIP network code; the tool itself has no persistence calls.
   const main = await readFile(resolve(import.meta.dirname, '../src/main.ts'), 'utf8');
   assert(!/localStorage|sessionStorage|indexedDB|innerHTML\s*=/.test(main));

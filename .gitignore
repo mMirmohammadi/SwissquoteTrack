@@ -1,5 +1,6 @@
 # Agent-local scratch (durable docs and skills remain versioned)
 /AgentsLocal/
+/.worktrees/
 
 # Local secrets
 .env
@@ -16,6 +17,8 @@ __pycache__/
 .pnpm-store/
 swissquote-wallet/**/data/
 swissquote-wallet/**/dist/
+# Test-only pinned upstream SDK build is part of the mandatory C8 fixture.
+!swissquote-wallet/contracts/vendor/abstractionkit/package/dist/
 swissquote-wallet/contracts/artifacts/
 swissquote-wallet/contracts/cache/
 swissquote-wallet/**/test-results/

@@ -1,5 +1,7 @@
 # Independent protocol review — final bounded pass
 
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
 **59 independent protocol tests passed; no failures or skips. Protocol fixes are accepted within this offline test scope. Recovered-wallet caller integration remains open.**
 
 The exact evidence, before/after failures and next actions are recorded once in [protocol final findings](<../plans/protocol-final-findings.md>). This result supersedes the earlier 37-test run with four failures. Builders edited concurrently; this is a working-tree observation, not an audit of a fixed commit.

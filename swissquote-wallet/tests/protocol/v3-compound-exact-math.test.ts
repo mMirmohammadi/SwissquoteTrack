@@ -36,8 +36,8 @@ export function compoundFixture(action: 'supply'|'withdraw'='supply',amount=1000
 }
 const evaluate=(f=compoundFixture())=>effectsFromSimulation(wallet,f.calls,f.raw,11887593n,base);
 for(const [time,index,balance] of [[1791672132n,1437657897106916n,999998n],[1791672252n,1437659456431214n,999999n]])test(`recorded exact vector ${balance}`,()=>{const m=modelCompound(empty,stored,time,1000000n,'supply');assert.equal(m.index,index);assert.equal(m.principal,695575n);assert.equal(m.balanceAfter,balance);assert.equal(evaluate(compoundFixture('supply',1000000n,empty,stored,time)).effects[1].amount,String(balance));});
-const recorded = JSON.parse(readFileSync(new URL('../../../AgentsLocal/8f23ad61/result.json',import.meta.url),'utf8'));
-const funding = JSON.parse(readFileSync(new URL('../../../AgentsLocal/6b2f81a9/funding-block-result.json',import.meta.url),'utf8'));
+// Public recorded vectors are versioned with the tests, not another attempt's ignored scratch.
+const { recorded, funding } = JSON.parse(readFileSync(new URL('./fixtures/compound-exact-recorded.json',import.meta.url),'utf8'));
 for(let i=0;i<2;i++)test(`saved node ${i} raw tuples and events accepted`,()=>{
  const raw=structuredClone(recorded[i].raw),old=raw[0].calls;
  // Saved diagnostic order: user/totals/util/rate/index/factor. Production: user/totals/util/index/factor/rate.

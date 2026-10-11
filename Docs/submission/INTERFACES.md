@@ -1,4 +1,8 @@
-# L10 integration handoff — v3 documentation only
+# Historical L10 integration handoff — v3 documentation only
+
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
+**CURRENT V4 acceptance:** [the uncommitted isolated candidate](<../plans/v4/acceptance.md>) passed `bash-1996`, exit 0, **602 tests, zero skips, 417.0 seconds**, typecheck/build passed; 34 browser tests include local real-180-second recovery. Frozen v3 remains clean at `cb7297a`. This is not a production audit or approval of further proposed UI. **G1 public-browser recovery PASSED:** the same wallet completed creation, payment, card+partner recovery and replacement-owner payment across encrypted retained browser sessions after timeouts—not one uninterrupted take. Finalization/new payment used normal unlock on one page; virtual WebAuthn and MOCK identity remain limits. See [completed evidence](<claims.md#g1-public-browser-recovery--completed-across-retained-sessions>). The ownership and pending-gate prose below records an earlier lane, not current acceptance; use the [current handoff](<IMPLEMENTATION.md>).
 
 **Ownership: v3 `Docs/submission/`, excluding `evidence/`, L11 pitch and historical architecture HTML/JSON assets.** No application exports, routes, run-guide edits outside this scope, Git operations, secrets, transactions or external publication.
 

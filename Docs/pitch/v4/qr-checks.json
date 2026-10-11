@@ -1,0 +1,24 @@
+[
+  {
+    "file": "safe-history-qr.svg",
+    "mode": "byte",
+    "version": 6,
+    "ec": "L",
+    "mask": 0,
+    "formatBits": "0x77c4",
+    "payload": "https://app.safe.global/transactions/history?safe=sep:0xad9c2831beeF85Df126BE1f80a443d26e2122dA9",
+    "reedSolomonSyndromesAllZero": true,
+    "opticalPhoneScan": "human pending"
+  },
+  {
+    "file": "payment-qr.svg",
+    "mode": "byte",
+    "version": 6,
+    "ec": "L",
+    "mask": 0,
+    "formatBits": "0x77c4",
+    "payload": "https://sepolia.etherscan.io/tx/0xe3188195628404c7da0883744aa6562c45e6597fe32c636e72fb3890801dc77e",
+    "reedSolomonSyndromesAllZero": true,
+    "opticalPhoneScan": "human pending"
+  }
+]

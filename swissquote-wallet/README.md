@@ -1,70 +1,39 @@
 # Swissquote Wallet prototype
 
-A local-first Safe wallet demo: the client signs payments; replacing the owner needs the recovery card plus either the partner or Swissquote. Both helpers together are insufficient under the intended, independently checked wallet rules. This is a prototype, not a bank integration or a production security guarantee.
+**A client key signs payments; a Recovery Card plus one helper authorizes delayed replacement.** Swissquote holds no ordinary owner key. Both helpers without card cannot satisfy either intended recovery module. This is test software, not a production bank integration or security guarantee.
 
-**Evidence boundary:** final builds and all workspace/adversarial tests pass with local integrations and browser enabled. Actual browser flow passes passkey registration, wallet creation, independent checks, offline kit opening, funding and small/large hash-bound-passkey payments. Complete browser recovery/rotation and live Sepolia remain unverified; no production-readiness claim. See [final integrated evidence](<../Docs/plans/swarm-final-verification.md>). See [acceptance ledger](<../Docs/plans/swarm-acceptance.md>) and [browser findings](<../Docs/plans/browser-final-findings.md>) for exact limits.
+The frozen-v3 evidence includes a browser/service zero-ETH payment and one third-party Compound III test supply on Sepolia. Public recovery/kit sweep are **SCRIPTED**; complete browser recovery passed locally. The last recorded full gate passed **591 tests, zero skips**, typechecks/builds; no new gate for proposed v4 UI is asserted. [Root overview](<../README.md>); [exact ledger](<../Docs/submission/claims.md>).
 
-## Run locally
+## Run locally — source-checked, not rehearsed from a clean clone here
 
-Prerequisites: Node 26 and pnpm matching [package.json](<package.json>), dependencies provisioned by the integration owner, and compiled contract artifacts. Do not use real keys. Root installation and lockfile changes belong to the lead; this guide intentionally does not request an install.
+Prerequisites: Node 26, pnpm 12.6.0 from [package.json](<package.json>) and contract dependencies. From the repository root:
 
-From the repository root, install the workspace and isolated contract dependencies, then start the chain:
+    cd swissquote-wallet
+    pnpm install
+    npm --prefix contracts install
+    pnpm demo:local
 
-```sh
-cd swissquote-wallet
-pnpm install
-npm --prefix contracts install
-npm --prefix contracts run compile
-npm --prefix contracts run node
-```
+[local-demo.mjs](<local-demo.mjs>) calls the [isolated launcher](<scripts/v3-local.mjs>), which owns a fresh local chain, compiles/initializes fixtures, prepares MOCK liquidity and starts both apps/services. **Do not start a separate chain or call devnet first.** The launcher refuses occupied ports and local dotenv files and does not load credentials or attach to/reset an existing demo. Stop with Ctrl-C. Do not use real keys or run public write commands as part of this local demo.
 
-Leave the chain running. In a second terminal in this directory, initialize its pinned local fixtures and start the browser demo with local-only keys and MOCK bank liquidity:
+Defaults: wallet <http://localhost:5273>, separate Recovery Desk <http://localhost:5274>, Swissquote service loopback 4101, partner 4102, local RPC 8645. Use localhost consistently for WebAuthn. localhost/127.0.0.1 RPC aliases are the **same node**, not independent operators. DemoUSDC is a local fixture. The CLI `story` is a separate scripted contract path with locally advanced time, not a browser rehearsal; never mutate someone else's chain.
 
-```sh
-pnpm devnet
-pnpm demo:local
-```
+## Validation commands are not a full-gate receipt
 
-The local launcher refuses a nonlocal chain and supplies explicitly unsafe development keys only to local processes. Never use these fixtures on a public chain. It starts the wallet, separate tool and two MOCK services. For the standalone contract/protocol acceptance story use `pnpm story`; do not mutate a chain during a browser run.
+    pnpm typecheck
+    pnpm build
+    pnpm test
+    pnpm test:contracts
 
-`devnet` places pinned contract-runtime fixtures at their Sepolia addresses **on the local chain**, and a mintable DemoUSDC fixture at the USDC address. It is not a public deployment. `story` is the chain/protocol fallback story, not a browser/service rehearsal. It advances local EVM time to test the genuine recovery delay; it does not spend three real minutes waiting. Script execution can mutate local chain state. Do not run these commands against a shared chain without coordinating with its owner.
+These commands were inspected, not run by this docs lane. The isolated acceptance command and browser/network scope are [recorded separately](<../Docs/plans/v3/compound-acceptance.md>); the unit/contract subset alone is not the full 591-test gate.
 
-Open the wallet at <http://localhost:5173> and the separate tool at <http://localhost:5174>. Swissquote listens on loopback port 4001; partner on 4002; local RPC on 8545. Use `localhost` consistently for passkeys. [dev.mjs](<dev.mjs>) stops supervised processes together when one exits or Ctrl-C is pressed.
+## Authority, exit and MOCKs
 
-### Browser/service configuration is a separate checkpoint
+Safe threshold is one. Module A requires card+partner, 180-second demo wait; module B requires card+Swissquote, three-day wait. Both pending modules must be checked/cancelled. Production waits remain undecided; full public B completion is unconfirmed.
 
-The CLI story uses explicit local-only development fixtures. The browser/services require their own enrolled users and guardian keys; a story wallet is not automatically a registered browser wallet.
+Email/password or optional passkey opens login, not the encrypted owner key. Large/admin sponsorship requires exact-hash passkey; owner-funded transactions bypass those fee rules. Unlocked-key theft, compromised publisher, card+fooled-helper takeover and cancellation races remain. [Threat model](<../Docs/submission/threat-model.md>).
 
-The supervisor loads a local `.env` if present. [Environment example](<.env.example>) defines local chain/RPC/browser settings, but its empty keys do not fund or enable the relayer. Configure local-only keys privately; never paste them into chat or logs. Swissquote additionally requires `ENABLE_MOCK=true` for its demo-only endpoints; its startup code reads `PORT` (default 4001), not `SQ_PORT`. Without `RELAYER_PRIVATE_KEY`, it starts without its chain adapter. The partner reads `PARTNER_PORT` and uses separate storage. Ask the integration owner to provision/fund the local account and relayer and align service configuration. The checked-in example alone is not evidence that browser funding works.
+The Desk opens/exports/checks the current kit key; a separate funded submitter and working chain/RPC are needed to move funds. The recorded 3-USDC exit used a script and FUNDER-paid gas, not a Desk broadcast or live shutdown drill. Refresh the kit after owner replacement.
 
-Keep `CHAIN=local` and `VITE_CHAIN=local`. The two local URLs `127.0.0.1` and `localhost` can point to the same node: fallback aliases, **not independent providers**. Sepolia write opt-ins must remain off during this implementation session.
+Live public sanctions-oracle/USDC blacklist reads are real. MOCK: bank account/funding provenance, KYC, face/video, mailbox, demo sanctions entries, helper-key protection in SQLite and fixed CHF conversion. Independent publisher governance and production HSMs are not implemented. Public test funding may be mined despite its simulated bank origin.
 
-### Validation commands for the integration owner
-
-```sh
-pnpm typecheck
-pnpm build
-pnpm test
-pnpm test:contracts
-pnpm --filter @sq/recovery-tool build
-```
-
-These are available commands, not results from this lane. Package-manager invocation can synchronize dependencies; only the lead should run workspace commands during concurrent implementation. The tool build's inliner is intended to produce a standalone HTML file. Confirm the output exists and actually works from a saved file before the outage demo.
-
-## What is real and what is MOCK
-
-- **Real implementation, runtime unverified here:** Safe transaction and recovery signing, pinned-contract checks, WebCrypto-encrypted kit, WebAuthn integration, separate services, public-RPC reads. Local development uses real pinned Safe/Candide runtime code, but is not a Sepolia execution receipt.
-- **MOCK:** Swissquote identity/KYC/account/mailbox, partner face checks, local guardian-key protection (“MOCK HSM”), sanctions and approved-dApp lists, fixed CHF conversion, independent publisher/governance of the tool. Local DemoUSDC is a mintable token fixture, not Circle-issued USDC.
-- **Not claimed:** production banking APIs, production biometrics/HSMs, audited integration, formal verification, on-chain passkey spending limits, live WalletConnect, or live multichain support.
-
-## Authority and limits
-
-Safe v1.4.1 has one owner and threshold one. Module A requires card + partner with a 180-second demo wait. Module B requires card + Swissquote with a 259,200-second wait. The owner can cancel pending requests; both modules must be checked and cleared. Production waits are recommendations, not deployed policy.
-
-Passkeys for large/admin transactions control **sponsored relay acceptance**, not the Safe's independent spending path. Someone holding the owner key can pay their own gas and bypass application/relayer checks. A malicious wallet-app publisher could steal a key while it is unlocked. An independently obtained tool checks setup rules; it cannot prove a compromised app never copied the key.
-
-The encrypted kit plus its separate code restores the current owner key without Swissquote. It still needs a working chain/RPC and a funded submitter; it is not offline settlement. After recovery or rotation, replace the kit and reject stale owner credentials. Keep kit code separate from recovery-card words.
-
-## Submission and source evidence
-
-Start with the [submission index](<../Docs/submission/README.md>), [threat model](<../Docs/submission/threat-model.md>), [custody / Travel Rule note](<../Docs/submission/custody-travel-rule.md>), and [demo script](<../Docs/submission/demo-script.md>). The legal proposal is address-control evidence linked to a MOCK customer, not legal ownership proof or approved Swissquote interoperability. No commits, pushes, public deployment, or live transactions were performed by this lane.
+[Submission guide](<../Docs/submission/README.md>) · [Architecture](<../Docs/submission/architecture.md>) · [Legal position](<../Docs/submission/custody-travel-rule.md>) · [AI disclosure](<../Docs/submission/ai-tools.md>). Human video, screenshots, disclosures and publication remain pending.

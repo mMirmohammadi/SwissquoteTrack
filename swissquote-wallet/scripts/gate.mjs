@@ -58,10 +58,10 @@ async function workspaceSuites() {
   return suites;
 }
 export async function gate() {
-  // Independent source inventory: Docs/plans/v3/compound-test-inventory.md.
-  // Prior 519 + 51 exact-math + 4 policy + 17 service regressions = 591.
-  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '591');
-  if (!Number.isSafeInteger(expected) || expected < 591) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 591');
+  // Independent source inventory: Docs/plans/v4/test-inventory.md.
+  // Frozen v3 591 + eight launcher + three UI + seven return-shortcut regressions = 609.
+  const expected = Number(process.env.GATE_EXPECTED_TESTS ?? '609');
+  if (!Number.isSafeInteger(expected) || expected < 609) throw new Error('GATE_EXPECTED_TESTS must be an approved integer >= 609');
   const started = Date.now();
   let runtime;
   let total = 0;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { getAddress, type Address } from 'viem';
 import { assertRecoveryHash, createKit, decodeSetupCode, encodeCode, encodeExecTransaction, generateKitCode, generateOwnerSeed, makeSafeTx, mnemonicToAddress, mnemonicToPrivateKey, moduleAbi, safeAbi, signSafeTx, type EmergencyKit, type RecoveryApproveResponse, type RecoveryRequest, type TransactionResponse } from '@sq/protocol';
 import type { FeatureProps } from '../context';
@@ -9,6 +9,7 @@ import { creationMetadata, registerDeviceOwnership, type WalletMetadataResponse 
 import { bindWallet, loadDevice, promoteDevice, saveDevice, unlockDevice, type DeviceRecord } from '../../storage';
 import { useRecoveryPoll } from '../alert/useRecoveryPoll';
 import { addressGroups, assertReady, cardApproval, helperApproval, pollRecovery, RECOVERY_MODULES, remaining } from './core';
+import { Countdown } from './Countdown';
 
 export default function Feature({ context }: FeatureProps) {
   const [target, setTarget] = useState(context.wallet || '');
@@ -22,6 +23,7 @@ export default function Feature({ context }: FeatureProps) {
   const [matched, setMatched] = useState(false);
   const [kit, setKit] = useState<EmergencyKit>();
   const [kitCode, setKitCode] = useState('');
+  const [showKitCode, setShowKitCode] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [saved, setSaved] = useState(false);
   const [done, setDone] = useState(false);
@@ -38,7 +40,7 @@ export default function Feature({ context }: FeatureProps) {
     return () => { live = false; oldSeed.current = ''; };
   }, [context.session?.clientId]);
   useEffect(() => {
-    const lock = () => { if (document.hidden) { oldSeed.current = ''; setPassphrase(''); setKitCode(''); setKit(undefined); setDownloaded(false); setSaved(false); } };
+    const lock = () => { if (document.hidden) { oldSeed.current = ''; setPassphrase(''); setKitCode(''); setShowKitCode(false); setKit(undefined); setDownloaded(false); setSaved(false); } };
     document.addEventListener('visibilitychange', lock); return () => document.removeEventListener('visibilitychange', lock);
   }, []);
   function session() { if (!context.session) throw new Error('Sign in to Swissquote first. Login does not replace your Recovery Card.'); return context.session; }
@@ -94,7 +96,7 @@ export default function Feature({ context }: FeatureProps) {
     if (!record || record.owner.toLowerCase() !== replacement.owner.toLowerCase()) throw new Error('Encrypted replacement is missing. Do not finalize.');
     const seed = await unlockDevice(record, passphrase); const code = await generateKitCode();
     setKit(await createKit(seed, code, { wallet: replacement.wallet, owner: replacement.owner, chainId: context.chainId, modules: RECOVERY_MODULES.map(m => m.address) }));
-    setKitCode(code); setDownloaded(false); setSaved(false); setPassphrase('');
+    setKitCode(code); setShowKitCode(false); setDownloaded(false); setSaved(false); setPassphrase('');
   }
   function downloadKit() {
     if (!kit) return;
@@ -129,10 +131,10 @@ export default function Feature({ context }: FeatureProps) {
       context.notify('New owner confirmed and encrypted replacement installed, but recovery is NOT yet secure: another request may remain active. Reload/unlock the installed replacement and use Stop it in the recovery alert before treating recovery as complete.');
       await context.refresh(); return;
     }
-    setClearConfirmed(true);
     try { await registerDeviceOwnership(installed, seed, auth.clientId, auth.token, context.chainId); }
     catch { context.notify('Same address and new owner confirmed; encrypted key installed. Swissquote ownership registration is incomplete: retry registration before funding.'); await context.refresh(); return; }
-    context.notify('Done — same wallet address. New owner confirmed by both nodes and registered. Reload/unlock this installed device if the shell still shows the old key.'); await context.refresh();
+    setClearConfirmed(true);
+    context.notify('Done — same wallet address. New owner confirmed by both nodes and registered. Unlock the installed device using its new device passphrase before paying.'); await context.refresh();
   }
   async function tryOldKey() {
     requireRpc(); if (!done || !replacement?.wallet || !oldSeed.current) throw new Error('Old key is unavailable on this new phone. This check requires the old device’s already-unlocked key; never paste seed words here.');
@@ -144,27 +146,67 @@ export default function Feature({ context }: FeatureProps) {
   }
   const code = request ? encodeCode({ ...request, nonce: request.nonce.toString(), v: 1, kind: 'request' }) : '';
   const pending = snapshot?.pending.find(p => p.module.toLowerCase() === selected.address.toLowerCase());
-  return <section className="panel" data-testid={TEST_IDS.recovery}><h2>I lost my phone — recover the same wallet.</h2>
-    <p>Recovery needs your Recovery Card and one helper. A password reset cannot unlock your wallet. Keep the new device until recovery finishes.</p>
-    <label className="field">Wallet to recover<input data-testid={TEST_IDS.recoveryWallet} value={target} disabled={!!request || done} onChange={e => setTarget(e.target.value)} /></label>
-    <label className="field">Choose a helper<select data-testid={TEST_IDS.recoveryHelper} value={moduleIndex} disabled={done} onChange={e => { setModuleIndex(Number(e.target.value)); setRequest(undefined); setApproval(''); setMatched(false); }}>
-      {RECOVERY_MODULES.map((m, i) => <option key={m.address} value={i}>{m.label} — {m.wait}</option>)}</select></label>
-    <label className="field">{replacement ? 'Unlock saved replacement · app unlock code' : 'New app unlock code · at least 12 characters'}<input type="password" autoComplete="off" value={passphrase} onChange={e => setPassphrase(e.target.value)} /></label>
-    {!done && <button data-testid={TEST_IDS.recoveryPrepare} disabled={context.busy || !context.session || !passphrase} onClick={() => { void context.run('Preparing encrypted new phone', prepare); }}>{replacement ? 'Resume saved replacement' : 'Prepare new phone'}</button>}
-    {replacement && <><h3>Full new owner address — compare every group</h3><strong className="address-wrap" data-testid={TEST_IDS.recoveryNewOwner}>{addressGroups(replacement.owner)}</strong><p><code>{getAddress(replacement.owner)}</code></p></>}
-    {request && !done && <><h3>Approve with your Recovery Card, offline</h3><p>Open the offline tool from your own bookmark or saved copy, never from a link sent to you. Paste this public request there. Enter card words only in that independently saved tool, never in this wallet or a helper’s website.</p>
-      <textarea aria-label="Public recovery request code" readOnly value={code} /><button disabled={context.busy} onClick={() => { void context.run('Copying public request', async () => { await navigator.clipboard.writeText(code); context.notify('Public request copied. Open your own saved offline tool.'); }); }}>Copy public request</button>
-      <label><input type="checkbox" checked={matched} onChange={e => setMatched(e.target.checked)} />I compared every group of the full new owner address on the offline approval screen.</label>
-      <label className="field">Public card approval code, not card words<textarea data-testid={TEST_IDS.recoveryCardApproval} value={approval} onChange={e => setApproval(e.target.value)} /></label>
-      {moduleIndex === 0 ? <label className="field">Partner face check — MOCK<select value={face} onChange={e => setFace(e.target.value)}><option value="client-demo">Enrolled demo client face</option><option value="thief-face">Different face — should be refused</option></select></label> : <label><input type="checkbox" checked={video} onChange={e => setVideo(e.target.checked)} />Swissquote video ID passed — MOCK, not a real identity check.</label>}
-      <button data-testid={TEST_IDS.recoveryStart} disabled={context.busy || !approval || !matched || !!snapshot?.pending.length} onClick={() => { void context.run('Requesting helper-approved recovery', start); }}>Ask helper and start recovery</button></>}
-    {pollError && <p role="alert">{pollError}</p>}{pending && <p role="status">{pollError ? 'Countdown unavailable; last known request may still be active.' : remaining(pending.executeAfter, snapshot!.timestamp)}. Rechecked every 15 seconds using block time, not this device’s clock.</p>}
-    {replacement && <><h3>Save your new Emergency Kit before finalizing</h3><p>The old kit stops controlling this wallet after recovery. Unlock the encrypted replacement to export its new kit. This code stays local and is never sent to helpers.</p>
-      <button disabled={context.busy || !passphrase} onClick={() => { void context.run('Creating replacement emergency kit', exportKit); }}>Create new encrypted kit</button>
-      {kit && <><p>New kit code — store separately from the kit file: <strong>{kitCode || 'Hidden; create a fresh kit export.'}</strong></p><button disabled={!kitCode} onClick={downloadKit}>Download new encrypted kit</button><label><input type="checkbox" checked={saved} disabled={!downloaded} onChange={e => setSaved(e.target.checked)} />I saved the new kit file and stored its code separately. This is my acknowledgement, not an automated backup check.</label></>}
-      {!done && <button data-testid={TEST_IDS.recoveryFinalize} disabled={context.busy || !saved || !passphrase || !!pollError} onClick={() => { void context.run('Finalizing and installing recovered owner', finish); }}>Check block time, finalize and install saved key</button>}</>}
-    {done && <><h3>{clearConfirmed ? 'Done — same address' : 'New key installed — protection check incomplete'}</h3><p className="address-wrap">{replacement?.wallet}</p><p>Both public nodes confirmed the saved replacement as the sole owner. The new encrypted key is installed on this device. Reload and unlock it if the wallet still shows the previous key.</p>{!clearConfirmed && <p role="alert">Other recovery requests may still be active. Unlock the installed replacement and use Stop it in the alert before treating recovery as secure. Swissquote ownership registration still needs retrying.</p>}
-      <button data-testid={TEST_IDS.recoveryOldKey} disabled={context.busy || !oldSeed.current} onClick={() => { void context.run('Checking old key without sending', tryOldKey); }}>Try the old key · read-only</button>
-      {!oldSeed.current && <p>The old key is not available here. Run the check on the old, unlocked device; no refusal has been claimed.</p>}{oldKeyResult && <p role="status">{oldKeyResult}</p>}</>}
+  const matchingPending = !!pending && !!replacement && pending.newThreshold === 1n && pending.newOwners.length === 1 && pending.newOwners[0].toLowerCase() === replacement.owner.toLowerCase();
+  const approvalsConfirmed = matchingPending && !!snapshot?.certain && !pollError;
+  const stepDone = [!!request || done, !!replacement, (matched && !!approval) || approvalsConfirmed || done, approvalsConfirmed || done, done, done && clearConfirmed];
+  const currentStep = stepDone.findIndex(value => !value);
+  const stepState = (index: number) => stepDone[index] ? 'done' : index === currentStep ? 'current' : 'upcoming';
+  const step = (index: number, title: string, children: React.ReactNode) => <li key={title} className={`rw-step rw-${stepState(index)}`} aria-current={index === currentStep ? 'step' : undefined}>
+    <div className="rw-marker" aria-hidden="true">{stepDone[index] ? '✓' : index + 1}</div>
+    <div className="rw-body"><h3>{title}</h3>{children}</div></li>;
+  return <section className="panel recovery-wizard" data-testid={TEST_IDS.recovery}>
+    <h2>Lost your phone? Move your wallet to this one.</h2>
+    <p className="rw-lead">You need your Recovery Card and one trusted helper. Your wallet address and money stay the same.</p>
+    {pollError && <p role="alert">{pollError}</p>}
+    <ol className="rw-steps" aria-label="Recovery progress">
+      {step(0, 'Choose your wallet and helper', <>
+        <label className="field">Wallet to recover<input data-testid={TEST_IDS.recoveryWallet} value={target} disabled={!!request || done} onChange={e => setTarget(e.target.value)} /></label>
+        <label className="field">Choose a helper<select data-testid={TEST_IDS.recoveryHelper} value={moduleIndex} disabled={done} onChange={e => { setModuleIndex(Number(e.target.value)); setRequest(undefined); setApproval(''); setMatched(false); }}>
+          {RECOVERY_MODULES.map((m, i) => <option key={m.address} value={i}>{m.label} — {m.wait}</option>)}</select></label>
+      </>)}
+      {step(1, 'Protect this new device', <>
+        <p>{replacement ? 'Enter the device passphrase you chose for this phone. You will need it again to save your new kit and to finish.' : 'Choose a device passphrase. It unlocks your wallet on this phone only.'}</p>
+        <label className="field">{replacement ? 'Unlock saved replacement · app unlock code' : 'New app unlock code · at least 12 characters'}<input type="password" autoComplete="off" value={passphrase} onChange={e => setPassphrase(e.target.value)} /></label>
+        {!done && <button className={replacement ? 'secondary' : 'primary'} data-testid={TEST_IDS.recoveryPrepare} disabled={context.busy || !context.session || !passphrase} onClick={() => { void context.run('Preparing encrypted new phone', prepare); }}>{replacement ? 'Resume saved replacement' : 'Prepare new phone'}</button>}
+      </>)}
+      {step(2, 'Approve with your Recovery Card', <>
+        {!request && !done && <p>After step 2 you will get a request to approve in the Recovery Desk.</p>}
+        {replacement && <div className="rw-compare"><span className="rw-label">New address — it must match the Recovery Desk group by group</span><strong className="address-wrap rw-groups" data-testid={TEST_IDS.recoveryNewOwner}>{addressGroups(replacement.owner)}</strong>
+          <details><summary>Details</summary><code>{getAddress(replacement.owner)}</code></details></div>}
+        {request && !done && <>
+          <p className="rw-safety"><strong>Enter your card words only in the Recovery Desk, never here.</strong> Open the Desk from your own saved copy, not from a link someone sends you.</p>
+          <ol className="rw-substeps">
+            <li><span>Copy this request into the Recovery Desk.</span>
+              <textarea aria-label="Public recovery request code" readOnly value={code} /><button className="primary" disabled={context.busy} onClick={() => { void context.run('Copying public request', async () => { await navigator.clipboard.writeText(code); context.notify('Public request copied. Open your own saved offline tool.'); }); }}>Copy public request</button></li>
+            <li><label className="check"><input type="checkbox" checked={matched} onChange={e => setMatched(e.target.checked)} />I compared every group of the full new owner address on the offline approval screen.</label></li>
+            <li><label className="field">Public card approval code, not card words<textarea data-testid={TEST_IDS.recoveryCardApproval} value={approval} onChange={e => setApproval(e.target.value)} /></label></li>
+          </ol></>}
+      </>)}
+      {step(3, 'Helper check and start', <>
+        {!(request && !done) && <p>Your helper confirms it is really you, then the waiting period starts.</p>}
+        {request && !done && <>
+          {moduleIndex === 0 ? <label className="field">Partner face check — MOCK<select value={face} onChange={e => setFace(e.target.value)}><option value="client-demo">Enrolled demo client face</option><option value="thief-face">Different face — should be refused</option></select></label> : <label className="check"><input type="checkbox" checked={video} onChange={e => setVideo(e.target.checked)} />Swissquote video ID passed — MOCK, not a real identity check.</label>}
+          <button className="primary" data-testid={TEST_IDS.recoveryStart} disabled={context.busy || !approval || !matched || !!snapshot?.pending.length} onClick={() => { void context.run('Requesting helper-approved recovery', start); }}>Ask helper and start recovery</button></>}
+      </>)}
+      {step(4, 'Waiting period', <>
+        <p className="rw-safety">Your old phone, if someone has it, can still stop this. Keep this phone until the end.</p>
+        {pending && snapshot && <div className="rw-countdown"><Countdown pending={pending} snapshot={snapshot} unavailable={!!pollError} /></div>}
+        {pending && !matchingPending && !done && <p className="polish-warning">The pending request does not match this new phone’s key. Do not treat it as your recovery.</p>}
+        {pending && <p role="status">{pollError ? 'Countdown unavailable; last known request may still be active.' : remaining(pending.executeAfter, snapshot!.timestamp)}. Rechecked every 15 seconds using block time, not this device’s clock.</p>}
+        {replacement && <div className="rw-kit"><h4>Meanwhile, save a new Emergency Kit</h4><p>Your old kit stops working after recovery. Unlock with your device passphrase (step 2), then save the file and its kit code in separate places.</p>
+          <button className={kit ? 'secondary' : 'primary'} disabled={context.busy || !passphrase} onClick={() => { void context.run('Creating replacement emergency kit', exportKit); }}>Create new encrypted kit</button>
+          {kit && <><p>New kit code — store separately from the kit file: <strong className={showKitCode ? undefined : 'kit-code-masked'}>{kitCode || 'Hidden; create a fresh kit export.'}</strong></p><div className="button-row"><button className="secondary" disabled={!kitCode} aria-pressed={showKitCode} onClick={() => setShowKitCode(value => !value)}>{showKitCode ? 'Hide code' : 'Show code'}</button><button className="primary" disabled={!kitCode} onClick={downloadKit}>Download new encrypted kit</button></div><small>Visual privacy only: the code remains in this page. Do not share or project it.</small><label className="check"><input type="checkbox" checked={saved} disabled={!downloaded} onChange={e => setSaved(e.target.checked)} />I saved the new kit file and stored its code separately. This is my acknowledgement, not an automated backup check.</label></>}</div>}
+      </>)}
+      {step(5, 'Finish', <>
+        {!done && <p>When the waiting period is over, enter your device passphrase (step 2) and move the wallet to this phone.</p>}
+        {replacement && !done && <button className="primary" data-testid={TEST_IDS.recoveryFinalize} disabled={context.busy || !saved || !passphrase || !!pollError} onClick={() => { void context.run('Finalizing and installing recovered owner', finish); }}>Check block time, finalize and install saved key</button>}
+        {done && <div className="rw-done"><h3>{clearConfirmed ? 'Done — same address' : 'New key installed — protection check incomplete'}</h3>
+          <p>Same wallet, new phone. Your address didn’t change. Old Emergency Kits no longer work; keep the new one. Reload and unlock with your new device passphrase if the wallet still shows the previous key.</p>
+          {!clearConfirmed && <p role="alert">Other recovery requests may still be active. Unlock the installed replacement and use Stop it in the alert before treating recovery as secure. Swissquote ownership registration still needs retrying.</p>}
+          <details open><summary>Details</summary><p className="address-wrap">{replacement?.wallet}</p><p>Both public nodes confirmed the saved replacement as the sole owner. The new encrypted key is installed on this device.</p>
+            <button className="secondary" data-testid={TEST_IDS.recoveryOldKey} disabled={context.busy || !oldSeed.current} onClick={() => { void context.run('Checking old key without sending', tryOldKey); }}>Try the old key · read-only</button>
+            {!oldSeed.current && <p>The old key is not available here. Run the check on the old, unlocked device; no refusal has been claimed.</p>}{oldKeyResult && <><strong className="polish-refused">Refused ✓</strong><p role="status">{oldKeyResult}</p></>}</details></div>}
+      </>)}
+    </ol>
   </section>;
 }

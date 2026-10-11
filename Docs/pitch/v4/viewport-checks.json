@@ -1,0 +1,44 @@
+{
+  "checkedAt": "2026-10-11T05:57:30.167Z",
+  "checks": [
+    {
+      "viewport": [
+        1280,
+        720
+      ],
+      "rect": {
+        "left": 0,
+        "top": 0,
+        "right": 1280,
+        "bottom": 720
+      },
+      "fits": true
+    },
+    {
+      "viewport": [
+        1920,
+        1080
+      ],
+      "rect": {
+        "left": 320,
+        "top": 180,
+        "right": 1600,
+        "bottom": 900
+      },
+      "fits": true
+    },
+    {
+      "viewport": [
+        390,
+        844
+      ],
+      "rect": {
+        "left": 0,
+        "top": 312.3125,
+        "right": 390,
+        "bottom": 531.6875
+      },
+      "fits": true
+    }
+  ]
+}

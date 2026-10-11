@@ -1,12 +1,14 @@
 # Recovery assistance — proposed terms sheet
 
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
+
 **Design proposal for counsel, not an executed contract, a Swissquote offer or legal advice.** The service is best-efforts recovery assistance and fee sponsorship for a client-controlled wallet. No contractual rights, production price or service-level guarantee are created by this prototype.
 
 ## Authority and client responsibilities
 
 The client holds the ordinary spending key. Every assisted recovery requires the client's Recovery Card **and** one helper. Swissquote has no card-free recovery route and must not receive card words, owner seed or kit code. Card possession is not proof that the holder is the client; helper verification remains essential. Losing all owner/kit access and the card can permanently lose access to funds.
 
-The client keeps three things: phone (passkey and app unlock code), 12-word Recovery Card, and Emergency Kit file plus separate kit code. The 24-word seed is advanced owner material, not the Recovery Card. After owner replacement, save the new kit: the old kit no longer controls the wallet. Use a trusted saved tool, verify the full new-owner address and monitor both modules.
+The client keeps three things: phone (encrypted owner key and separate device passphrase; optional login passkey, required for owner-signed large/admin sponsorship, not assisted recovery/finalization), 12-word Recovery Card, and Emergency Kit file plus separate kit code. The 24-word seed is advanced owner material, not the Recovery Card. After owner replacement, save the new kit: the old kit no longer controls the wallet. Use a trusted saved tool, verify the full new-owner address and monitor both modules.
 
 ## Best efforts, cancellation and service withdrawal
 

@@ -1,38 +1,34 @@
-# Swissquote Wallet v3 — judge tour
+# Swissquote Wallet — judge guide
 
-**Your payment key; your card plus one helper for recovery; an emergency kit for an independent exit.** This is a Safe-based EVM prototype, not MPC, ERC-4337 or a guarded-wallet design. Swissquote has no ordinary owner key. The app publisher remains trusted, and a thief with the unlocked owner key can spend immediately.
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
 
-**Evidence checkpoint:** the [copied Sepolia story](<../../swissquote-wallet/evidence/sepolia/full-2026-10-10T19-28-59Z.json>) reports 23 successful script-driven records, including 11 mined transactions: wallet creation, 1/6-USDC payments, both-module cancellation, module-A recovery after a real 180-second chain wait, a 3-USDC RPC-only kit sweep and owner rotation at the same address. L10 inspected the full artifact offline, not the chain independently. TREASURY submits ordinary story transactions; FUNDER pays the sweep. Browser/service RELAYER execution and mined DeFi are not confirmed. [Exact claim/receipt map](<claims.md>) preserves those limits and L13's two reported regressions awaiting verified fixes; no full-gate or safety completion is claimed.
+**Your key pays; your Recovery Card plus one helper can bring you back.** Swissquote holds no ordinary spending key. The unlocked owner key can spend immediately, and the app publisher remains trusted.
 
-## Two-minute tour: claim → evidence
+## CURRENT V4 acceptance
 
-| Claim | Evidence available | What it does not establish |
+The isolated, **uncommitted V4 candidate** passed `bash-1996`, exit 0: **602 passed, zero skipped, 417.0 seconds**, typecheck/build passed. Inventory: 560 Node/browser + 42 contracts (historical frozen 591 + 8 launcher + 3 UI); browser 34 includes local real-180-second recovery. [Durable acceptance](<../plans/v4/acceptance.md>). Frozen v3 remains clean at `cb7297a`. No production audit or acceptance of further proposed UI is implied. **G1 public-browser recovery PASSED:** the same wallet completed creation, payment, card+partner recovery and replacement-owner payment across encrypted retained browser sessions after timeouts—not one uninterrupted take. Finalization/new payment used normal unlock on one page; virtual WebAuthn and MOCK identity remain limits. See [completed evidence](<claims.md#g1-public-browser-recovery--completed-across-retained-sessions>).
+
+## Start with the bounded proof
+
+| Claim | Evidence | Boundary |
 | --- | --- | --- |
-| One owner; assisted recovery requires card plus one helper | [Initializer](<../../swissquote-wallet/packages/protocol/src/wallet.ts#L37-L44>); [Sepolia C1 checks](<claims.md>) | Script card+helper starts accepted; helpers together without card refused read-only on both modules. Not arbitrary-wallet or live-service assurance |
-| Public scripted create → pay → recover → old-key refusal exists | [Exact Sepolia records C2–C3](<claims.md>) | A finalizes after the real 180-second chain wait; GS026 and early-finalize refusals are read-only. No browser/service recovery proof |
-| Small payments differ from large/admin payments | [Sepolia payment/rotation records C14](<claims.md>) | Small/Large/Admin classification, not executed WebAuthn or on-chain passkey enforcement; owner can bypass relay |
-| Recovery and owner rotation preserve the contract address | [Sepolia deploy/finalize/rotation C2/C14](<claims.md>) | Synchronised recovery across networks |
-| Current recovered kit can exit without helper-service calls | [3-USDC Sepolia RPC-only sweep C8](<claims.md>); [sweep implementation](<../../swissquote-wallet/scripts/kit-sweep.ts>) | FUNDER pays gas; no actual service-shutdown drill, saved-file browser proof, all-token support or offline settlement |
-| Gasless and DeFi bonuses are being implemented | [Bonus acceptance checklist](<bonus.md>); [claim ledger](<claims.md>) | Completed bonus credit; the core story and service-sent transactions must pass first |
-| Legal and commercial decisions are reasoned, not approved | [Legal position](<custody-travel-rule.md>); [business case](<business-case.md>); [draft terms](<terms-sheet.md>) | FINMA approval, bank wallet eligibility, production pricing or profit |
+| Zero-ETH 1-USDC payment, Swissquote service pays gas | [Public browser/service payment](<../research/v3-live-payment-evidence.md>) | Virtual WebAuthn; MOCK bank/KYC, not physical biometric evidence |
+| One 1-USDC Compound III supply, approval reset to zero | [Public browser/service supply](<../research/v3-live-compound-evidence.md>) | Second wallet, third-party test deployment; no withdrawal/swap |
+| Card+partner recovery at same address, old key refused | [Completed public G1](<claims.md#g1-public-browser-recovery--completed-across-retained-sessions>); [local browser recovery](<claims.md#bounded-local-browser-recovery-acceptance>) | G1 public browser recovery completed across retained sessions; old-key refusal read-only; older scripted/local evidence remains separate |
+| Both helpers without card cannot recover | [Initializer](<../../swissquote-wallet/packages/protocol/src/wallet.ts#L37-L44>); [scripted no-card checks](<claims.md>) | Two separate modules, card+partner and card+Swissquote; expected configuration and recorded read-only checks, not arbitrary-wallet assurance |
+| Kit can exit without helper-service calls | [Scripted RPC-only 3-USDC sweep](<claims.md>) | FUNDER paid gas. Desk exports/checks key, not the sweep broadcaster; no service-shutdown drill or all-token exit |
+| Current isolated V4 candidate passes its gate | [V4 acceptance](<../plans/v4/acceptance.md>) | **602 tests, zero skips**, typecheck/build passed; uncommitted candidate, not a production audit. [Historical v3: 591](<../plans/v3/compound-acceptance.md>) remains separate |
 
-## What is real, simulated and MOCK
+The script artifact has 23 successful records including 11 mined transactions, not 23 transactions. TREASURY paid its ordinary transactions, not the service RELAYER. [Exact ledger](<claims.md>) preserves receipt values and historical/local distinctions. Full three-day public module-B completion, public-browser large/admin step-up and broader DeFi execution are not confirmed.
 
-| Item | Classification |
-| --- | --- |
-| Safe/Candide signatures, browser encryption, contract checks | Real implementation; execution coverage depends on the linked run, not the component name |
-| Hardhat lifecycle tests | Recorded local execution; chain clock advanced; not public-chain evidence |
-| Sepolia script lifecycle/receipt gas | Recorded public: 11 successful transaction hashes; actual gas used, but no effectiveGasPrice/actual fee total. Read-only checks and local kit cryptography are separate |
-| Bank account, KYC, partner face check, mailbox, SECO name check, demo sanctions list | MOCK; not a real bank/compliance/identity integration |
-| Guardian keys in SQLite | MOCK HSM; separate processes/storage, not hardware key protection |
-| Public sanctions-oracle reads, DeFi effects preview, strict sponsorship | v3 targets; only claim measured results after dated source/decision/receipt evidence |
-| Bitcoin recovery spending rule | Separate private-regtest research, not integrated wallet recovery |
-| Solana, inheritance, production waiting periods | Design/roadmap, not built |
+## Real, MOCK and proposed
 
-## Documents and running the prototype
+The Safe/Candide contract checks, browser key encryption, WebAuthn service verification, live public sanctions-oracle/USDC blacklist reads and linked public transactions are real. Bank account/KYC/funding provenance, face/video checks, mailbox, demo sanctions entries and SQLite helper vaults are MOCK. Local DemoUSDC is a fixture. Independent publisher governance, production HSMs, legal approval, inheritance, integrated Bitcoin/Solana and production delays are proposals or out of scope.
 
-Read [threat model](<threat-model.md>), [architecture](<architecture.md>), [bonus status](<bonus.md>), [AI disclosure](<ai-tools.md>) and [paste-ready submission](<SUBMISSION.md>). The existing [run guide](<../../swissquote-wallet/README.md>) is a local/v2-oriented baseline; the integration owner must supply the final v3 launcher/gate instructions. Do not use its live-v2 ports for acceptance tests. v3's intended ports are wallet 5273, tool 5274, services 4101/4102 and local chain 8645.
+[Architecture](<architecture.md>) separates components from evidence. [Threat model](<threat-model.md>) explains unlocked-key theft, publisher compromise, card+fooled-helper takeover, cancellation races and lockout. [Legal position](<custody-travel-rule.md>) states an argument plus regulatory risks, not approval; [business case](<business-case.md>) labels unconfirmed retention inputs as hypothetical.
 
-**Test counts are historical, not current v3 acceptance.** The pre-v3 record reports 228 workspace tests plus 42 contract tests, with the qualifications in the [status evidence index](<../plans/v3/implementation-status.md#L142-L191>). Later pre-v3 runs had skips. No current green full gate is asserted here; require its exact command, counts, zero skips and network. [Current routing](<../plans/v3/lane-routing.md#L29-L36>) reports two L13 regressions under repair (signing-enabled fooled route; uncertain-send queue release), not verified closure.
+## Run and review
 
-The existing [security review](<review-security.md>), [browser review](<review-browser.md>) and [integration review](<review-integration.md>) are earlier reports, not v3 sign-off. New execution evidence belongs to L2/L12 and the independent claims audit to L13. [Documentation handoff](<IMPLEMENTATION.md>) lists the remaining evidence gates.
+Use the [prototype run guide](<../../swissquote-wallet/README.md>) and [root overview](<../../README.md>). Commands and launcher defaults were read, not clean-clone rehearsed by this docs lane. Do not run against a shared chain or public network without the execution owner's approval. The [implementation handoff](<IMPLEMENTATION.md>) lists exact checks and pending inputs.
+
+The [submission text](<SUBMISSION.md>), [bonus details](<bonus.md>), [draft terms](<terms-sheet.md>) and [AI disclosure](<ai-tools.md>) are review-ready patches. Human names/tools, video, screenshots, public URLs and repository visibility remain pending. Historical review reports are not current sign-off; no publish/upload/submit/commit/push occurred here.

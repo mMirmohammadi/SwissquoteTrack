@@ -1,14 +1,16 @@
-# AI tools used — confirmed disclosure, not an invented team roster
+# AI tools — confirmed agent use, human fields pending
 
-**This page distinguishes this v3 lane's actual tools from earlier recorded use. The integration owner must merge other contributors' confirmed disclosures before submission.** DSH branding is not evidence that a DeepSeek model or DeepSeek search API was used.
+**FINAL V4 acceptance:** `bash-2077`, exit 0: `GATE PASS: passed=609, skipped=0, duration=434.2s`; typechecks/builds passed. This includes the seven added MOCK bank-return shortcut regressions (567 Node/browser + 42 contracts). It supersedes the earlier 602-test baseline below. G1 public-browser recovery separately passed across retained sessions, not one uninterrupted take. No production audit, hardware proof or publication is implied.
 
-| Tool / status | Use | Limit |
+**AI assisted the project; humans own the final claims and submission.** This table records only inspected evidence and this docs lane's actual tools, not a fabricated team roster. DSH's name does not establish that a DeepSeek model/search API was used.
+
+| Contributor / confirmation | Tools | Used for |
 | --- | --- | --- |
-| DeepSeek Harness (DSH), configured gpt-6.1-sol coding model — current L10 | Repository/source inspection, full copied Sepolia JSON reading and exact receipt/value mapping, judge/legal/business documentation, claim boundaries and offline document validation | No RPC/public action or independent receipt re-query, application/browser acceptance test, legal opinion or formal security audit |
-| Read/glob/grep/write/edit and local Node validation — current L10 | Inspect existing sources, scoped document edits, link/arithmetic checks | These are harness/development tools, not extra AI models |
-| Research skill and Archify skill/CLI — earlier submission-lane record | Existing research discipline and architecture artifact generation/checks | Reused historical artifacts; not invoked by current L10. Diagram is not current v3 execution evidence |
-| Other team models/tools | Disclosure pending integration-owner confirmation | Do not infer model/provider from file authorship or claim a complete roster |
+| Current v4 documentation agent — confirmed | DeepSeek Harness, configured **gpt-6.1-sol**; filesystem tools and local Node checks; Archify skill/CLI | Repository/code/evidence inspection, truthful judge-doc patches, real-vs-MOCK architecture generation and automated artifact/browser validation. No product runtime AI |
+| Earlier repository agent work — historical record only | DSH agents; research/Archify artifacts recorded in repository notes | Reused source notes and implementation evidence. Full model/provider attribution must be confirmed by the integration owner; no inferred roster |
+| Human team member name — **PENDING HUMAN INPUT** | **PENDING: actual tools/model names** | **PENDING: actual use and responsibility** |
+| Additional human team members — **PENDING HUMAN INPUT** | **PENDING: actual tools/model names** | **PENDING: actual use and responsibility** |
 
-Current L10 used existing repository research and source extractions, not a fresh external research run. No real key, seed, card words, kit code, credential or personal KYC record was requested, read intentionally or supplied to AI by this lane. This does not certify every contributor's handling; the integration owner owns the full secret scan and disclosure.
+No fresh external legal/financial research or independent chain re-query was performed by this lane. Recorded receipts and earlier research are evidence with stated limits, not AI attestations. This agent intentionally did not request or handle real credentials, owner/card words, kit codes or personal KYC data; that is not a certification of all contributors' handling.
 
-Humans retain responsibility for checking receipts and exact claims, sponsor/legal approval, rehearsals, privacy, source provenance and publication. L10 performed no Git operation, transaction, external upload or publication. See [documentation handoff](<IMPLEMENTATION.md>) for actual checks and [claim ledger](<claims.md>) for unverified results.
+Humans must confirm each person's usage, review claims/legal/financial inputs, run the final publication secret scan, supply video/screenshots/public links, and authorize visibility/submission. This lane did not commit, push, upload, publish or submit. [Actual validation and limits](<IMPLEMENTATION.md>).

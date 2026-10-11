@@ -1,0 +1,84 @@
+{
+  "checks": [
+    {
+      "id": "slide-1",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-2",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-3",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-4",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-5",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-6",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-7",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-8",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    },
+    {
+      "id": "slide-9",
+      "height": 720,
+      "scrollHeight": 720,
+      "overflow": []
+    }
+  ],
+  "navigation": {
+    "next": true,
+    "notes": true,
+    "stopsAtClose": true,
+    "backups": true,
+    "returns": true
+  },
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 720,
+      "fits": true
+    },
+    {
+      "width": 1920,
+      "height": 1080,
+      "fits": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "fits": true
+    }
+  ],
+  "errors": [],
+  "external": []
+}

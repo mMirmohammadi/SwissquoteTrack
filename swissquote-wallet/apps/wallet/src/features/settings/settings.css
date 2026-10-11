@@ -1,0 +1,15 @@
+.settings-v4 .settings-cards { display: grid; gap: 16px; max-width: 640px; }
+.settings-v4 .settings-card { display: flex; flex-direction: column; gap: 10px; }
+.settings-v4 .settings-card > button, .settings-v4 .settings-advanced > button { align-self: flex-start; }
+.settings-v4 .settings-warning { border-left: 3px solid #d97706; padding: 8px 12px; background: rgba(217, 119, 6, 0.08); }
+.settings-v4 .settings-stepper { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; margin: 4px 0; counter-reset: sq-step; }
+.settings-v4 .settings-stepper li { counter-increment: sq-step; display: flex; align-items: center; gap: 6px; font-size: 0.85rem; opacity: 0.6; }
+.settings-v4 .settings-stepper li::before { content: counter(sq-step); display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 1px solid currentColor; font-size: 0.75rem; }
+.settings-v4 .settings-stepper li.current { opacity: 1; font-weight: 600; }
+.settings-v4 .settings-stepper li.done { opacity: 0.85; }
+.settings-v4 .settings-stepper li.done::before { content: '✓'; }
+.settings-v4 details > summary { cursor: pointer; font-size: 0.85rem; }
+.settings-v4 .settings-advanced > summary h3 { display: inline; margin: 0; }
+.settings-v4 .settings-advanced > summary span { display: block; font-size: 0.85rem; opacity: 0.75; margin-top: 4px; }
+.settings-v4 .settings-advanced[open] { display: flex; flex-direction: column; gap: 10px; }
+.settings-v4 code { word-break: break-all; }
